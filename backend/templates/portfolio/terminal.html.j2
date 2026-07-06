@@ -71,7 +71,7 @@
   #tout div { margin: 2px 0; }
   .hint { color: rgba({{ accent_rgb }}, .5); font-size: 12px; }
   /* system bugs: skills disguised as crawlers. click one to squash it */
-  .bug { position: fixed; left: 0; top: 0; z-index: 30; width: 26px; height: 19px; cursor: crosshair;
+  .bug { position: absolute; left: 0; top: 0; z-index: 30; width: 26px; height: 19px; cursor: crosshair;
          will-change: transform; filter: drop-shadow(0 0 5px var(--dim)); }
   .bug svg { width: 100%; height: 100%; display: block; }
   .pxx { position: fixed; z-index: 31; width: 4px; height: 4px; background: var(--acc);
@@ -303,13 +303,16 @@
       toast.textContent = msg; toast.classList.add('on');
       clearTimeout(toastT); toastT = setTimeout(function(){ toast.classList.remove('on'); }, 2600);
     }
-    var crawlers = BUGSK.map(function(skill){
+    var docH = Math.max(innerHeight, document.documentElement.scrollHeight);
+    var crawlers = BUGSK.map(function(skill, i){
       var el = document.createElement('div'); el.className = 'bug'; el.innerHTML = SPRITE;
       document.body.appendChild(el);
-      var b = { el: el, skill: skill, dead: false,
-                x: 20 + Math.random() * (innerWidth - 60),
-                y: 70 + Math.random() * Math.max(60, innerHeight - 320),
-                a: Math.random() * 6.28, t: Math.random() * 100 };
+      // each bug guards its own patch of the page, spread top to bottom
+      var hx = 30 + Math.random() * Math.max(80, innerWidth - 90);
+      var hy = 130 + (i + .2 + Math.random() * .6) / BUGSK.length * Math.max(200, docH - 480);
+      var b = { el: el, skill: skill, dead: false, x: hx, y: hy, hx: hx, hy: hy,
+                a: Math.random() * 6.28, t: Math.random() * 100,
+                state: 'walk', left: 80 + Math.random() * 140, flip: false };
       el.addEventListener('click', function(){
         if (b.dead) return; b.dead = true; squashed++;
         var rc = el.getBoundingClientRect(), cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2;
@@ -338,16 +341,30 @@
       crawlers.forEach(function(b){
         if (b.dead) return;
         b.t++;
-        b.a += (Math.random() - .5) * .18;
-        var sp = .55 + Math.sin(b.t * .12) * .25;  // scuttle: speed pulses like insect steps
-        b.x += Math.cos(b.a) * sp; b.y += Math.sin(b.a) * sp;
-        if (b.x < 6) { b.x = 6; b.a = Math.PI - b.a; }
-        if (b.x > innerWidth - 32) { b.x = innerWidth - 32; b.a = Math.PI - b.a; }
-        if (b.y < 58) { b.y = 58; b.a = -b.a; }
-        if (b.y > innerHeight - 240) { b.y = innerHeight - 240; b.a = -b.a; }
+        // stop-and-go: walk a while, pause and look around, then wander again
+        if (--b.left <= 0) {
+          if (b.state === 'walk') { b.state = 'idle'; b.left = 70 + Math.random() * 130; }
+          else { b.state = 'walk'; b.left = 80 + Math.random() * 140; b.a = Math.random() * 6.28; }
+        }
+        var rot;
+        if (b.state === 'walk') {
+          b.a += (Math.random() - .5) * .08;
+          // stay near home turf so bugs don't swarm the same spot
+          var dx = b.hx - b.x, dy = b.hy - b.y;
+          if (dx * dx + dy * dy > 130 * 130) b.a = Math.atan2(dy, dx);
+          var sp = .5 + Math.sin(b.t * .35) * .3;  // stepping gait
+          b.x += Math.cos(b.a) * sp; b.y += Math.sin(b.a) * sp;
+          if (b.x < 6) { b.x = 6; b.a = Math.PI - b.a; }
+          if (b.x > innerWidth - 32) { b.x = innerWidth - 32; b.a = Math.PI - b.a; }
+          if (b.y < 60) { b.y = 60; b.a = -b.a; }
+          if (b.y > docH - 160) { b.y = docH - 160; b.a = -b.a; }
+          b.flip = Math.cos(b.a) < 0;
+          rot = Math.sin(b.t * .4) * 8;
+        } else {
+          rot = Math.sin(b.t * .09) * 20;  // idle: turning its head, scanning
+        }
         b.el.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px)' +
-          ' rotate(' + Math.sin(b.t * .3) * 10 + 'deg)' +
-          (Math.cos(b.a) < 0 ? ' scaleX(-1)' : '');
+          ' rotate(' + rot + 'deg)' + (b.flip ? ' scaleX(-1)' : '');
       });
       requestAnimationFrame(crawl);
     })();

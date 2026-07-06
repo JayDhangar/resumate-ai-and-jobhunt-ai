@@ -7,7 +7,7 @@
 <style>
   :root { --acc: {{ accent }}; --ink: #111111; --paper: #f2efe6; }
   * { box-sizing: border-box; margin: 0; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
   body { background: var(--paper); color: var(--ink);
          font-family: 'Segoe UI', Arial, sans-serif; overflow-x: hidden; }
   body.inv { background: var(--ink); color: var(--paper); }
@@ -96,7 +96,7 @@
   .invbtn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
 
   /* loose bricks in the wall: click one and it slides out stamped with a skill */
-  .brick { position: fixed; z-index: 60; width: 118px; height: 38px; background: var(--acc);
+  .brick { position: absolute; z-index: 60; width: 118px; height: 38px; background: var(--acc);
            background-image: repeating-linear-gradient(90deg, transparent 0 19px, rgba(17,17,17,.28) 19px 22px);
            border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); cursor: pointer;
            font-weight: 900; font-size: 12px; text-transform: uppercase; color: var(--ink);
@@ -227,13 +227,15 @@
   sweep();
   setTimeout(function(){ blocks.forEach(reveal); }, 6000);
 
-  // loose bricks: pull one out of the wall to see the skill stamped on it
+  // loose bricks: pull one out of the wall to see the skill stamped on it.
+  // anchored to the page, so fresh bricks keep appearing as you scroll
   var BR = {{ flat_skills[:10] | tojson }};
   if (BR.length && matchMedia('(min-width: 1181px)').matches) {
+    var docH = Math.max(innerHeight, document.documentElement.scrollHeight);
     BR.forEach(function(skill, i){
       var b = document.createElement('div');
       b.className = 'brick ' + (i % 2 ? 'r' : 'l');
-      b.style.top = ((i * 25) % 74 + 10) + '%';
+      b.style.top = Math.round(140 + (i + Math.random() * .7) / BR.length * Math.max(200, docH - 460)) + 'px';
       var s = document.createElement('span'); s.className = 's'; s.textContent = skill;
       b.appendChild(s);
       b.addEventListener('click', function(){
