@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api.js'
 import Header from './components/Header.jsx'
 import Stepper from './components/Stepper.jsx'
@@ -50,11 +50,7 @@ export default function App() {
   const [resume, setResume] = useState(null)
   const [templates, setTemplates] = useState(null) // null = loading
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
-  const [tweaks, setTweaks] = useState(() => {
-    try {
-      return { ...EMPTY_TWEAKS, ...JSON.parse(localStorage.getItem('rb-tweaks') || '{}') }
-    } catch { return EMPTY_TWEAKS }
-  })
+  const [tweaks, setTweaks] = useState(EMPTY_TWEAKS)
   const [scores, setScores] = useState(null)
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState(null)
@@ -71,9 +67,24 @@ export default function App() {
     document.documentElement.dataset.product = mode === 'jobs' ? 'jobs' : 'resume'
   }, [mode])
 
+  // tweaks are stored per resume, so one resume's layout choices (like a
+  // 1-page PDF) never leak into another's exports
+  const tweaksLoadedFor = useRef(null)
   useEffect(() => {
-    localStorage.setItem('rb-tweaks', JSON.stringify(tweaks))
-  }, [tweaks])
+    if (!resume?.id) return
+    try {
+      const saved = localStorage.getItem(`rb-tweaks:${resume.id}`)
+        ?? localStorage.getItem('rb-tweaks')  // legacy global key
+      setTweaks({ ...EMPTY_TWEAKS, ...JSON.parse(saved || '{}') })
+    } catch { setTweaks(EMPTY_TWEAKS) }
+    tweaksLoadedFor.current = resume.id
+  }, [resume?.id])
+
+  useEffect(() => {
+    if (resume?.id && tweaksLoadedFor.current === resume.id) {
+      localStorage.setItem(`rb-tweaks:${resume.id}`, JSON.stringify(tweaks))
+    }
+  }, [tweaks, resume?.id])
 
   const notify = useCallback((message, kind = 'info') => {
     setToast({ message, kind, id: Date.now() })
