@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{{ r.name }} — Portfolio</title>
+<title>{{ r.name }} | Portfolio</title>
 <style>
   :root { --acc: {{ accent }}; --ink: #16130f; --paper: #f6f2ea; --muted: #7a7468; }
   * { box-sizing: border-box; margin: 0; }
@@ -113,7 +113,7 @@
 <nav><span>{{ r.name }}</span><span>{{ r.location }}</span></nav>
 
 <header class="hero">
-  <div class="kicker">Portfolio — {{ roles[0] }}</div>
+  <div class="kicker">Portfolio · {{ roles[0] }}</div>
   <h1 id="name">
     {% for word in r.name.split() %}
     <span class="ln"><span class="w" style="animation-delay: {{ loop.index0 * 140 }}ms">{{ word }}</span></span>
@@ -126,18 +126,21 @@
   <div class="scroll-hint">SCROLL ↓</div>
 </header>
 
+{% if r.summary or flat_skills %}
 <section class="about">
-  <div class="idx">01 — ABOUT</div>
-  <div class="rev"><p>{{ r.summary }}</p></div>
-  <div class="rev" style="margin-top:34px"><p style="font-size:16px;font-family:'Segoe UI',sans-serif;color:var(--muted);max-width:60ch">
-    {{ flat_skills | join(' · ') }}</p></div>
+  <div class="idx">01 / ABOUT</div>
+  {% if r.summary %}<div class="rev"><p>{{ r.summary }}</p></div>{% endif %}
+  {% if flat_skills %}<div class="rev" style="margin-top:34px"><p style="font-size:16px;font-family:'Segoe UI',sans-serif;color:var(--muted);max-width:60ch">
+    {{ flat_skills | join(' · ') }}</p></div>{% endif %}
 </section>
+{% endif %}
 
+{% if r.projects %}
 <div class="strip-wrap" id="stripWrap">
   <div class="strip-sticky">
     <div class="strip" id="strip">
       <div class="card"><div class="no">✳</div><h3>Selected work</h3>
-        <p>{{ n_projects }} projects — scroll to travel through them.</p></div>
+        <p>{{ n_projects }} projects. Scroll to travel through them.</p></div>
       {% for p in r.projects %}
       <div class="card" data-view onclick="openProj({{ loop.index0 }})">
         <div class="no">{{ '%02d' | format(loop.index) }}</div>
@@ -150,23 +153,26 @@
     </div>
   </div>
 </div>
+{% endif %}
 
+{% if r.experience or r.education %}
 <section>
-  <div class="idx">02 — EXPERIENCE</div>
+  <div class="idx">02 / EXPERIENCE</div>
   {% for e in r.experience %}
   <div class="xp-row">
     <h3>{{ e.title }} <span class="co">@ {{ e.company }}</span></h3>
-    <span class="dt">{{ e.start_date }} — {{ e.end_date or 'NOW' }}</span>
+    <span class="dt">{{ e.start_date }} – {{ e.end_date or 'NOW' }}</span>
     {% if e.bullets %}<p>{{ e.bullets[0] }}</p>{% endif %}
   </div>
   {% endfor %}
   {% for ed in r.education %}
   <div class="xp-row">
     <h3>{{ ed.degree }} <span class="co">· {{ ed.institution }}</span></h3>
-    <span class="dt">{{ ed.start_date }} — {{ ed.end_date }}</span>
+    <span class="dt">{{ ed.start_date }} – {{ ed.end_date }}</span>
   </div>
   {% endfor %}
 </section>
+{% endif %}
 
 <section class="contact">
   <h2>Let's make<br/>something rare.</h2>
@@ -247,7 +253,7 @@ document.addEventListener('keydown', function(e){
   document.querySelectorAll('.rev').forEach(function(el){ io.observe(el); });
 
   var wrap = document.getElementById('stripWrap'), strip = document.getElementById('strip');
-  if (!reduced) addEventListener('scroll', function(){
+  if (wrap && strip && !reduced) addEventListener('scroll', function(){
     var rc = wrap.getBoundingClientRect();
     var total = wrap.offsetHeight - innerHeight;
     var p = Math.min(1, Math.max(0, -rc.top / total));

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{{ r.name }} — Portfolio</title>
+<title>{{ r.name }} | Portfolio</title>
 <style>
   :root { --acc: {{ accent }}; --acc2: {{ accent_light }}; --rgb: {{ accent_rgb }};
           --bg: #090c18; --text: #e9edf8; --muted: #97a0bb;
@@ -120,11 +120,14 @@
     </div>
   </header>
 
+  {% if r.summary %}
   <section class="about">
     <h2>About</h2>
     <div class="glass fade"><p>{{ r.summary }}</p></div>
   </section>
+  {% endif %}
 
+  {% if flat_skills %}
   <section>
     <h2>Skill constellation</h2>
     <div class="glass fade" style="padding:10px 10px 18px">
@@ -132,26 +135,30 @@
       <div class="web-hint">DRAG TO ROTATE · HOVER A NODE</div>
     </div>
   </section>
+  {% endif %}
 
+  {% if r.experience or r.education %}
   <section>
     <h2>Journey</h2>
     <div class="tl" id="tl"><div class="line" id="tlline"></div>
       {% for e in r.experience %}
       <div class="ev fade">
-        <div class="dt">{{ e.start_date }} — {{ e.end_date or 'PRESENT' }}</div>
+        <div class="dt">{{ e.start_date }} – {{ e.end_date or 'PRESENT' }}</div>
         <h3>{{ e.title }}</h3><div class="co">{{ e.company }}{% if e.location %} · {{ e.location }}{% endif %}</div>
         <ul>{% for b in e.bullets[:3] %}<li>{{ b }}</li>{% endfor %}</ul>
       </div>
       {% endfor %}
       {% for ed in r.education %}
       <div class="ev fade">
-        <div class="dt">{{ ed.start_date }} — {{ ed.end_date }}</div>
+        <div class="dt">{{ ed.start_date }} – {{ ed.end_date }}</div>
         <h3>{{ ed.degree }}</h3><div class="co">{{ ed.institution }}{% if ed.gpa %} · GPA {{ ed.gpa }}{% endif %}</div>
       </div>
       {% endfor %}
     </div>
   </section>
+  {% endif %}
 
+  {% if r.projects %}
   <section>
     <h2>Projects</h2>
     <div class="projs">
@@ -166,6 +173,7 @@
       {% endfor %}
     </div>
   </section>
+  {% endif %}
 
   <section class="end fade">
     <h2>Open to what's next.</h2>
@@ -173,7 +181,7 @@
     {% if r.email %}<a class="btn" href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}
   </section>
 </main>
-<footer>© {{ r.name }} · built with ResuMate AI · <span style="opacity:.65">✦ psst — some stars are brighter than others. click one.</span></footer>
+<footer>© {{ r.name }} · built with ResuMate AI · <span style="opacity:.65">✦ psst: some stars are brighter than others. click one.</span></footer>
 
 <script>
 (function(){
@@ -265,8 +273,8 @@
       'box-shadow:0 8px 30px rgba({{ accent_rgb }},.35);pointer-events:none;' +
       'transition:opacity .5s, transform 1.6s ease-out;';
     toast.innerHTML = '⭐ <b style="color:{{ accent_light }}">' + hit.skill + '</b>' +
-      '<small style="opacity:.75"> — core skill · ' + n + '/' + CORE.length + ' discovered</small>' +
-      (n === CORE.length ? '<br><small>🏆 you found them all — we should talk: {{ r.email }}</small>' : '');
+      '<small style="opacity:.75"> · core skill · ' + n + '/' + CORE.length + ' discovered</small>' +
+      (n === CORE.length ? '<br><small>🏆 you found them all. we should talk: {{ r.email }}</small>' : '');
     document.body.appendChild(toast);
     requestAnimationFrame(function(){ toast.style.transform = 'translateY(-46px)'; });
     setTimeout(function(){ toast.style.opacity = 0; }, 2300);
@@ -288,7 +296,9 @@
 
   /* ---- Skill constellation: 3D spider-web with skills at the nodes ---- */
   var SKILLS = {{ flat_skills | tojson }};
-  var web = document.getElementById('web'), wctx = web.getContext('2d');
+  var web = document.getElementById('web');
+  if (web) {
+  var wctx = web.getContext('2d');
   var W, H, RX, RY, nodes = [], rotX = -0.35, rotY = 0.6, velY = 0.0035, dragging = false,
       lastX = 0, lastY = 0, mouseX = -1e4, mouseY = -1e4;
   function sizeWeb(){
@@ -299,14 +309,14 @@
     RX = W * 0.46; RY = H * 0.50;
   }
   sizeWeb(); addEventListener('resize', sizeWeb);
-  // place skills on a sphere (fibonacci lattice) — an even spider web
+  // place skills on a sphere (fibonacci lattice) for an even spider web
   var N = SKILLS.length;
   for (var i = 0; i < N; i++) {
     var t = (i + 0.5) / N, phi = Math.acos(1 - 2 * t), theta = Math.PI * (1 + Math.sqrt(5)) * i;
     nodes.push({ x: Math.sin(phi) * Math.cos(theta), y: Math.cos(phi),
                  z: Math.sin(phi) * Math.sin(theta), label: SKILLS[i] });
   }
-  // unlabeled "dust" nodes at a smaller inner radius — fill the web's interior
+  // unlabeled "dust" nodes at a smaller inner radius fill the web's interior
   for (var i = 0; i < 14; i++) {
     var t2 = (i + 0.5) / 14, phi2 = Math.acos(1 - 2 * t2), th2 = Math.PI * (1 + Math.sqrt(5)) * (i + 7.3);
     var rr = 0.55;
@@ -340,7 +350,7 @@
     var cy = Math.cos(rotY), sy = Math.sin(rotY), cx = Math.cos(rotX), sx = Math.sin(rotX);
     var x1 = n.x * cy + n.z * sy, z1 = -n.x * sy + n.z * cy;
     var y2 = n.y * cx - z1 * sx, z2 = n.y * sx + z1 * cx;
-    var s = 1.95 / (2.9 - z2);  // gentle perspective — keeps the web spread wide
+    var s = 1.95 / (2.9 - z2);  // gentle perspective keeps the web spread wide
     return { x: W/2 + x1 * RX * s, y: H/2 + y2 * RY * s, z: z2, s: s };
   }
   (function spin(){
@@ -377,6 +387,7 @@
     });
     requestAnimationFrame(spin);
   })();
+  }
 
   var tl = document.getElementById('tl'), line = document.getElementById('tlline');
   addEventListener('scroll', function(){

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{{ r.name }} — Portfolio</title>
+<title>{{ r.name }} | Portfolio</title>
 <style>
   :root { --acc: {{ accent }}; --acc-dark: {{ accent_dark }}; --bg: #070a08; --dim: rgba({{ accent_rgb }}, 0.55); }
   * { box-sizing: border-box; margin: 0; }
@@ -95,11 +95,14 @@
     </div>
   </section>
 
+  {% if r.summary %}
   <section>
     <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="cat about.md"></span></div>
     <div class="out" data-reveal><p>{{ r.summary }}</p></div>
   </section>
+  {% endif %}
 
+  {% if r.skills %}
   <section>
     <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="./skills --list"></span></div>
     <div class="out" data-reveal>
@@ -109,6 +112,7 @@
       {% endfor %}
     </div>
   </section>
+  {% endif %}
 
   <section>
     <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="ls projects/ --details"></span></div>
@@ -128,6 +132,7 @@
     </div>
   </section>
 
+  {% if r.experience or r.education %}
   <section>
     <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="git log --experience"></span></div>
     <div class="out" data-reveal>
@@ -144,6 +149,7 @@
       {% endfor %}
     </div>
   </section>
+  {% endif %}
 </div>
 
 <div class="term">
@@ -229,9 +235,9 @@
     projects: {{ r.projects | map(attribute='name') | list | join(' · ') | tojson }},
     contact: 'email: {{ r.email }}{% if linkedin %} · linkedin: {{ linkedin }}{% endif %}{% if github %} · github: {{ github }}{% endif %}',
     neofetch: NEOFETCH,
-    whoami: '{{ r.name }} — {{ roles[0] }}',
+    whoami: '{{ r.name }} · {{ roles[0] }}',
     matrix: matrix,
-    'sudo hire-me': 'Permission granted ✔ — {{ r.email }} is waiting for your message.'
+    'sudo hire-me': 'Permission granted ✔ {{ r.email }} is waiting for your message.'
   };
   var CMDS = Object.keys(RESP).concat(['clear', 'theme ']);
   var tin = document.getElementById('tin'), tout = document.getElementById('tout');
@@ -259,7 +265,7 @@
       ans.textContent = setTheme(q.slice(6).trim()) ? 'theme applied ✔' : 'themes: green · amber · cyan · pink';
     } else {
       var r = RESP[q];
-      ans.textContent = typeof r === 'function' ? r() : (r || ("command not found: " + q + " — try 'help'"));
+      ans.textContent = typeof r === 'function' ? r() : (r || ("command not found: " + q + ". Try 'help'."));
     }
     tout.appendChild(ans);
     tout.scrollTop = tout.scrollHeight;

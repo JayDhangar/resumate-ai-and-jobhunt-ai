@@ -19,31 +19,31 @@ DESIGNS: dict[str, dict] = {
     "terminal": {
         "name": "Neon Terminal",
         "emoji": "🖥",
-        "tagline": "Your portfolio as a live terminal session — typing commands, phosphor glow, and a real prompt recruiters can type into.",
+        "tagline": "Your portfolio as a live terminal session: typing commands, phosphor glow, and a real prompt recruiters can type into.",
         "default_accent": "#33ff66",
     },
     "bento": {
         "name": "Bento Studio",
         "emoji": "🍱",
-        "tagline": "Apple/Linear-style glass bento grid — 3D tilt tiles, magnetic buttons, count-up stats.",
+        "tagline": "Apple/Linear-style glass bento grid with 3D tilt tiles, magnetic buttons, and count-up stats.",
         "default_accent": "#7c5fe8",
     },
     "kinetic": {
         "name": "Kinetic Ink",
         "emoji": "✒️",
-        "tagline": "Editorial typography in motion — letters assemble, words rotate, projects scroll sideways.",
+        "tagline": "Editorial typography in motion: letters assemble, words rotate, projects scroll sideways.",
         "default_accent": "#e8505b",
     },
     "aurora": {
         "name": "Aurora Glass",
         "emoji": "🌌",
-        "tagline": "Cinematic dark glassmorphism — drifting aurora, self-drawing timeline, particle sky.",
+        "tagline": "Cinematic dark glassmorphism: drifting aurora, self-drawing timeline, particle sky.",
         "default_accent": "#6d87ff",
     },
     "brutalist": {
         "name": "Brutalist Grid",
         "emoji": "🧱",
-        "tagline": "Raw, loud, unforgettable — hard shadows, slamming sections, colors that invert on click.",
+        "tagline": "Raw, loud, unforgettable. Hard shadows, slamming sections, colors that invert on click.",
         "default_accent": "#ffe600",
     },
 }
@@ -77,6 +77,10 @@ def build_portfolio(resume: ResumeData, design: str, accent: str = "") -> str:
     accent = accent or DESIGNS[design]["default_accent"]
     rgb = _hex_to_rgb(accent)
     accent = "#{:02x}{:02x}{:02x}".format(*rgb)
+
+    # display copy: portfolios use middots instead of spaced dashes in the headline
+    resume = resume.model_copy(deep=True)
+    resume.headline = re.sub(r"\s+[—–]\s+", " · ", resume.headline)
 
     first_name = (resume.name or "Me").split()[0]
     roles = [w.strip() for w in re.split(r"[|•·,/–—-]+", resume.headline) if w.strip()][:4]

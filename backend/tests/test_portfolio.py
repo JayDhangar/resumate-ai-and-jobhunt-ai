@@ -2,6 +2,7 @@
 import pytest
 
 from core.exceptions import ResumeBuilderError
+from models.schemas import ResumeData
 from services.portfolio_service import DESIGNS, build_portfolio
 
 
@@ -19,6 +20,26 @@ def test_every_design_renders(sample_resume, design):
         assert banned not in html
     # accessibility: reduced-motion handled
     assert "prefers-reduced-motion" in html
+
+
+@pytest.mark.parametrize("design", list(DESIGNS.keys()))
+def test_sparse_resume_adapts(design):
+    """Layouts are dynamic: empty sections collapse instead of rendering bare headings."""
+    sparse = ResumeData(name="Sam Sparse", email="sam@example.com", headline="Developer")
+    html = build_portfolio(sparse, design)
+    assert "Sam Sparse" in html
+    # section headings for absent data must not appear (as rendered elements)
+    for heading in ("Projects", "Journey", "Experience", "Track record",
+                    "Skill constellation", "The toolbox", "Arsenal", "Manifesto"):
+        assert f">{heading}<" not in html, f"{design}: '{heading}' rendered without data"
+    # em-dash-free microcopy
+    assert " — " not in html
+
+
+@pytest.mark.parametrize("design", list(DESIGNS.keys()))
+def test_copy_has_no_spaced_em_dashes(sample_resume, design):
+    html = build_portfolio(sample_resume, design)
+    assert " — " not in html
 
 
 def test_accent_is_applied_and_sanitized(sample_resume):

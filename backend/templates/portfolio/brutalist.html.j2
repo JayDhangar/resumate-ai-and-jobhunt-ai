@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{{ r.name }} — PORTFOLIO</title>
+<title>{{ r.name }} | PORTFOLIO</title>
 <style>
   :root { --acc: {{ accent }}; --ink: #111111; --paper: #f2efe6; }
   * { box-sizing: border-box; margin: 0; }
@@ -119,16 +119,21 @@
     </div>
   </div>
 
+  {% if r.summary %}
   <div class="blk">
     <h2>Manifesto</h2>
     <p style="font-size:clamp(17px,2.4vw,24px);font-weight:700;line-height:1.45">{{ r.summary }}</p>
   </div>
+  {% endif %}
 
+  {% if flat_skills %}
   <div class="blk">
     <h2>Arsenal</h2>
     <div class="skills">{% for s in flat_skills %}<div class="sk">{{ s }}</div>{% endfor %}</div>
   </div>
+  {% endif %}
 
+  {% if r.projects %}
   <div class="blk">
     <div class="sticker" style="animation-delay:.6s">Click them</div>
     <h2>Work</h2>
@@ -145,23 +150,26 @@
       {% endfor %}
     </div>
   </div>
+  {% endif %}
 
+  {% if r.experience or r.education %}
   <div class="blk">
     <h2>Track record</h2>
     {% for e in r.experience %}
     <div class="xp">
-      <div class="dt">{{ e.start_date }} —<br/>{{ e.end_date or 'NOW' }}</div>
+      <div class="dt">{{ e.start_date }} –<br/>{{ e.end_date or 'NOW' }}</div>
       <div><h3>{{ e.title }}</h3><div class="co">at <b>{{ e.company }}</b>{% if e.location %} · {{ e.location }}{% endif %}</div></div>
       <ul>{% for b in e.bullets[:3] %}<li>{{ b }}</li>{% endfor %}</ul>
     </div>
     {% endfor %}
     {% for ed in r.education %}
     <div class="xp">
-      <div class="dt">{{ ed.start_date }} —<br/>{{ ed.end_date }}</div>
+      <div class="dt">{{ ed.start_date }} –<br/>{{ ed.end_date }}</div>
       <div><h3>{{ ed.degree }}</h3><div class="co">at <b>{{ ed.institution }}</b>{% if ed.gpa %} · GPA {{ ed.gpa }}{% endif %}</div></div>
     </div>
     {% endfor %}
   </div>
+  {% endif %}
 
   <div class="blk shout">
     <h2>Hire me.<br/>Or regret it.</h2>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{{ r.name }} — Portfolio</title>
+<title>{{ r.name }} | Portfolio</title>
 <style>
   :root {
     --acc: {{ accent }}; --acc2: {{ accent_light }}; --rgb: {{ accent_rgb }};
@@ -184,7 +184,7 @@
 
 <div class="grid">
   <div class="tile hero">
-    <h1>Hi, I'm <em>{{ first_name }}</em> —<br/>{{ roles[0] }}.</h1>
+    <h1>Hi, I'm <em>{{ first_name }}</em>,<br/>{{ roles[0] }}.</h1>
     <p class="sub">{{ r.summary }}</p>
     <div class="cta-row">
       <a class="btn magnet" href="#contact">Get in touch ↓</a>
@@ -240,6 +240,7 @@
   </div>
   {% endfor %}
 
+  {% if r.experience or r.education %}
   <div class="tile xp">
     <h2>Experience</h2>
     {% for e in r.experience %}
@@ -251,15 +252,19 @@
       <b>{{ ed.degree }}</b><i>{{ ed.institution }}</i></div>
     {% endfor %}
   </div>
+  {% endif %}
 
+  {% if flat_skills %}
   <div class="tile toybox">
     <h2>The toolbox</h2>
     <div class="box" id="toybox">
       {% for s in flat_skills[:14] %}<span class="mag">{{ s }}</span>{% endfor %}
     </div>
-    <small>{{ n_skills }} tools, zero gravity — grab one and throw it</small>
+    <small>{{ n_skills }} tools floating in zero gravity. Grab one and throw it.</small>
   </div>
+  {% endif %}
 
+  {% if github or linkedin or r.phone or website %}
   <div class="tile links">
     {%- set contact_items = [] -%}
     {%- if github %}{% set _ = contact_items.append(('⌥', 'GitHub', 'code', 'https://' + github | replace('https://',''))) %}{% endif -%}
@@ -271,6 +276,7 @@
       <span>{{ icon }}</span>{{ label }}<small> · {{ sub }}</small></a>
     {%- endfor %}
   </div>
+  {% endif %}
 
   <div class="tile contact" id="contact">
     <h3>Let's build something.</h3>
