@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{{ r.name }} — Portfolio</title>
+<style>
+  :root {
+    --acc: {{ accent }}; --acc2: {{ accent_light }}; --rgb: {{ accent_rgb }};
+    --bg: #0d0f16; --glass: rgba(255,255,255,0.055); --border: rgba(255,255,255,0.11);
+    --text: #eceef5; --muted: #9aa1b5;
+  }
+  body.light { --bg: #eef0f6; --glass: rgba(255,255,255,0.68); --border: rgba(20,24,40,0.1);
+               --text: #171b2b; --muted: #5b6478; }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 26px; transition: background .4s, color .4s;
+    background-image: radial-gradient(700px 500px at 85% -10%, rgba(var(--rgb), .16), transparent 60%),
+                      radial-gradient(600px 500px at 0% 110%, rgba(var(--rgb), .10), transparent 60%);
+  }
+  .grid {
+    max-width: 1180px; margin: 0 auto; display: grid; gap: 16px;
+    grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(120px, auto);
+    grid-auto-flow: dense; /* fill holes so the grid never leaves gaps */
+  }
+  .tile {
+    background: var(--glass); border: 1px solid var(--border); border-radius: 22px; padding: 26px;
+    backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: 0 10px 34px rgba(0,0,0,0.25);
+    opacity: 0; transform: translateY(26px) scale(.97);
+    transition: opacity .6s cubic-bezier(.2,.8,.3,1.15), transform .6s cubic-bezier(.2,.8,.3,1.15);
+    will-change: transform; position: relative; overflow: hidden;
+  }
+  .tile.in { opacity: 1; transform: none; }
+  .hero { grid-column: span 3; grid-row: span 2; display: flex; flex-direction: column; justify-content: center; }
+  .avatar { grid-column: span 1; grid-row: span 2; display: flex; align-items: center; justify-content: center;
+            font-size: 64px; background: linear-gradient(135deg, rgba(var(--rgb), .3), var(--glass)); }
+  .avatar img { width: 78%; aspect-ratio: 1; object-fit: cover; border-radius: 50%;
+                border: 3px solid rgba(var(--rgb), .7); position: relative; z-index: 2;
+                box-shadow: 0 0 34px rgba(var(--rgb), .4); }
+  .avatar .mono { width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                  background: var(--acc); color: #fff; font-size: 40px; font-weight: 800;
+                  position: relative; z-index: 2; box-shadow: 0 0 34px rgba(var(--rgb), .45); }
+  /* graffiti skill words scattered behind the photo/monogram */
+  .graffiti { position: absolute; inset: 0; overflow: hidden; z-index: 1; pointer-events: none; }
+  .graffiti span { position: absolute; font-weight: 800; text-transform: uppercase;
+                   letter-spacing: 1px; color: rgba(var(--rgb), .55); white-space: nowrap;
+                   animation: gdrift 7s ease-in-out infinite alternate; }
+  @keyframes gdrift { to { transform: translateY(-6px) rotate(var(--gr, -8deg)); } }
+  .graffiti span:nth-child(1)  { top: 5%;  left: -4%;  font-size: 17px; transform: rotate(-14deg); --gr: -18deg; }
+  .graffiti span:nth-child(2)  { top: 14%; right: -6%; font-size: 12px; transform: rotate(9deg);  --gr: 13deg; opacity: .7; }
+  .graffiti span:nth-child(3)  { top: 26%; left: 4%;   font-size: 14px; transform: rotate(5deg);  --gr: 1deg;  opacity: .5; }
+  .graffiti span:nth-child(4)  { top: 36%; right: 2%;  font-size: 19px; transform: rotate(-7deg); --gr: -11deg; }
+  .graffiti span:nth-child(5)  { top: 48%; left: -6%;  font-size: 12px; transform: rotate(12deg); --gr: 16deg; opacity: .6; }
+  .graffiti span:nth-child(6)  { top: 58%; right: -3%; font-size: 15px; transform: rotate(-11deg);--gr: -7deg; opacity: .75; }
+  .graffiti span:nth-child(7)  { top: 68%; left: 6%;   font-size: 18px; transform: rotate(6deg);  --gr: 10deg; opacity: .5; }
+  .graffiti span:nth-child(8)  { top: 79%; right: 4%;  font-size: 12px; transform: rotate(-5deg); --gr: -9deg; opacity: .7; }
+  .graffiti span:nth-child(9)  { top: 88%; left: -2%;  font-size: 15px; transform: rotate(10deg); --gr: 14deg; opacity: .6; }
+  .graffiti span:nth-child(10) { top: 2%;  left: 42%;  font-size: 11px; transform: rotate(-9deg); --gr: -13deg; opacity: .55; }
+  h1 { font-size: clamp(30px, 4.4vw, 52px); letter-spacing: -1px; line-height: 1.05; }
+  h1 em { font-style: normal; background: linear-gradient(90deg, var(--acc), var(--acc2));
+          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: var(--muted); margin-top: 10px; font-size: 16px; max-width: 60ch; }
+  .cta-row { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 11px 22px; border-radius: 12px; font-weight: 650; font-size: 14px;
+    background: var(--acc); color: #fff; text-decoration: none; transition: transform .15s, box-shadow .2s;
+    box-shadow: 0 6px 18px rgba(var(--rgb), .35); will-change: transform;
+  }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+  .stats { display: flex; gap: 24px; align-items: center; justify-content: space-around; grid-column: span 2; }
+  .stat b { font-size: 40px; color: var(--acc); font-weight: 800; }
+  .stat span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .ribbon { grid-column: span 2; display: flex; align-items: center; overflow: hidden; padding: 0; }
+  .ribbon .track { display: flex; gap: 26px; white-space: nowrap; animation: slide 26s linear infinite;
+                   padding: 26px 0; font-weight: 600; color: var(--muted); }
+  .ribbon .track span::before { content: "✦ "; color: var(--acc); }
+  @keyframes slide { to { transform: translateX(-50%); } }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--acc); margin-bottom: 14px; }
+  .proj { grid-column: span 2; cursor: pointer; }
+  .proj h3 { font-size: 21px; margin-bottom: 8px; }
+  .proj p { color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+  .tags { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 12px; padding: 3px 10px; border-radius: 20px; background: rgba(var(--rgb), .14);
+         color: var(--acc2); border: 1px solid rgba(var(--rgb), .3); }
+  .proj .more { max-height: 0; overflow: hidden; transition: max-height .5s ease; }
+  .proj.open .more { max-height: 300px; }
+  .proj .more ul { padding: 12px 0 0 18px; color: var(--muted); font-size: 14px; }
+  .xp { grid-column: span 2; }
+  .job { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .job:last-child { border: none; }
+  .job b { display: block; } .job i { color: var(--acc2); font-style: normal; font-size: 13.5px; }
+  .job span { color: var(--muted); font-size: 12.5px; float: right; }
+  .now { grid-column: span 2; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+  .pulse { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #35d07f;
+           margin-right: 8px; box-shadow: 0 0 0 0 rgba(53,208,127,.6); animation: pulse 1.8s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 12px rgba(53,208,127,0); } 100% { box-shadow: 0 0 0 0 rgba(53,208,127,0); } }
+  .now .role-line { font-size: 17px; font-weight: 650; }
+  .now .clock { font-size: 34px; font-weight: 800; color: var(--acc);
+                font-variant-numeric: tabular-nums; }
+  .quote { grid-column: span 2; display: flex; align-items: center; }
+  .quote p { font-size: 17.5px; line-height: 1.6; font-style: italic; color: var(--text); }
+  .quote p::before { content: "“"; color: var(--acc); font-size: 40px; line-height: 0;
+                     vertical-align: -12px; margin-right: 6px; }
+  .links { grid-column: 1 / -1; display: flex; gap: 12px; align-items: stretch; justify-content: center;
+           flex-wrap: wrap; min-height: 110px; }
+  .link-big {
+    flex: 1 1 0; min-width: 105px; text-align: center; padding: 18px 10px; border-radius: 16px;
+    background: rgba(var(--rgb), .1); border: 1px solid var(--border); text-decoration: none;
+    color: var(--text); font-weight: 700; transition: all .2s;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .link-big span { display: block; font-size: 26px; margin-bottom: 6px; }
+  .link-big small { color: var(--muted); font-weight: 500; }
+  .link-big:hover { background: rgba(var(--rgb), .22); transform: translateY(-4px);
+                    border-color: rgba(var(--rgb), .5); }
+  .contact { grid-column: 1 / -1; text-align: center; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; gap: 12px; min-height: 220px;
+             background: linear-gradient(135deg, rgba(var(--rgb), .22), var(--glass)); }
+  .contact h3 { font-size: 26px; }
+  /* ---- click-to-uncover covers ---- */
+  .covered { position: relative; }
+  .cover {
+    position: absolute; inset: 0; z-index: 6; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(135deg, rgba(var(--rgb), .38), rgba(var(--rgb), .12)), var(--bg);
+    border-radius: inherit; text-align: center;
+    transition: transform .65s cubic-bezier(.55,-.15,.25,1), opacity .55s;
+  }
+  .cover .q { font-size: 34px; animation: qbob 2.2s ease-in-out infinite; }
+  @keyframes qbob { 50% { transform: translateY(-7px) rotate(8deg); } }
+  .cover b { letter-spacing: 3px; font-size: 13px; text-transform: uppercase; }
+  .cover small { color: var(--muted); font-size: 11.5px; letter-spacing: 2px; text-transform: uppercase; }
+  .cover.off { transform: translateY(-116%) rotate(-6deg); opacity: 0; pointer-events: none; }
+  .proj .hint-more { margin-top: 12px; font-size: 11.5px; font-weight: 700; letter-spacing: 2px;
+                     color: var(--acc); text-transform: uppercase; }
+  .proj.open .hint-more { display: none; }
+
+  /* ---- cursor spotlight over the whole grid ---- */
+  .spot { position: fixed; inset: 0; pointer-events: none; z-index: 2;
+          background: radial-gradient(440px at var(--mx, 50%) var(--my, 30%),
+                      rgba(var(--rgb), .09), transparent 70%); }
+
+  /* ---- shipping heatmap ---- */
+  .heat { grid-column: span 2; }
+  .heatgrid { display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px; margin-top: 12px; }
+  .heatgrid i { aspect-ratio: 1; border-radius: 2.5px; background: var(--acc); display: block;
+                transition: opacity .3s, transform .15s; }
+  .heatgrid i:hover { transform: scale(1.6); opacity: 1 !important; }
+  .heat small { color: var(--muted); display: block; margin-top: 10px; font-size: 12px; }
+
+  .toggle { position: fixed; top: 18px; right: 18px; z-index: 60; cursor: pointer;
+            background: var(--glass); border: 1px solid var(--border); color: var(--text);
+            border-radius: 20px; padding: 7px 14px; font-size: 13px; backdrop-filter: blur(10px); }
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--acc), var(--acc2));
+              width: 0; z-index: 70; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin: 34px 0 6px; }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .hero, .avatar, .stats, .ribbon, .proj, .xp, .contact { grid-column: span 2; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile { opacity: 1; transform: none; transition: none; }
+    .ribbon .track { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="bar"></div>
+<div class="spot"></div>
+<button class="toggle" onclick="document.body.classList.toggle('light')">◐ theme</button>
+
+<div class="grid">
+  <div class="tile hero">
+    <h1>Hi, I'm <em>{{ first_name }}</em> —<br/>{{ roles[0] }}.</h1>
+    <p class="sub">{{ r.summary }}</p>
+    <div class="cta-row">
+      <a class="btn magnet" href="#contact">Get in touch ↓</a>
+      {% if github %}<a class="btn ghost magnet" href="https://{{ github | replace('https://','') }}" target="_blank">GitHub ↗</a>{% endif %}
+      {% if linkedin %}<a class="btn ghost magnet" href="https://{{ linkedin | replace('https://','') }}" target="_blank">LinkedIn ↗</a>{% endif %}
+    </div>
+  </div>
+
+  <div class="tile avatar tilt">
+    <div class="graffiti">
+      {% for s in flat_skills[:10] %}<span>{{ s }}</span>{% endfor %}
+    </div>
+    {% if r.photo %}<img src="{{ r.photo }}" alt="{{ r.name }}"/>{% else %}<div class="mono">{{ initials }}</div>{% endif %}
+  </div>
+
+  <div class="tile stats">
+    <div class="stat"><b data-count="{{ r.experience | length }}">0</b><span>roles</span></div>
+    <div class="stat"><b data-count="{{ n_projects }}">0</b><span>projects</span></div>
+    <div class="stat"><b data-count="{{ n_skills }}">0</b><span>skills</span></div>
+  </div>
+
+  <div class="tile ribbon">
+    <div class="track">
+      {% for s in flat_skills %}<span>{{ s }}</span>{% endfor %}
+      {% for s in flat_skills %}<span>{{ s }}</span>{% endfor %}
+    </div>
+  </div>
+
+  <div class="tile now">
+    <div><span class="pulse"></span><b>Available for opportunities</b></div>
+    {% if r.experience %}
+    <div class="role-line">Currently {{ r.experience[0].title | title }} @ {{ r.experience[0].company }}</div>
+    {% endif %}
+    <div class="clock"><span id="clock">--:--</span> <small style="font-size:14px;color:var(--muted)">{{ r.location.split(',')[0] }} time</small></div>
+  </div>
+
+  {% set top_bullet = (r.experience[0].bullets[0] if r.experience and r.experience[0].bullets else r.summary) %}
+  <div class="tile quote covered">
+    <div class="cover"><span class="q">✦</span><b>One thing about me</b><small>click to uncover</small></div>
+    <p>{{ top_bullet }}</p>
+  </div>
+
+  {% for p in r.projects %}
+  <div class="tile proj tilt covered" onclick="this.classList.toggle('open')">
+    <div class="cover"><span class="q">🎁</span><b>Project {{ '%02d' | format(loop.index) }}</b>
+      <small>click to uncover</small></div>
+    <h2>Project {{ '%02d' | format(loop.index) }}</h2>
+    <h3>{{ p.name }}</h3>
+    <p>{{ p.description }}</p>
+    <div class="hint-more">+ tap for the inside story</div>
+    <div class="more"><ul>{% for b in p.bullets %}<li>{{ b }}</li>{% endfor %}</ul></div>
+    <div class="tags">{% for t in p.technologies %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+  </div>
+  {% endfor %}
+
+  <div class="tile xp">
+    <h2>Experience</h2>
+    {% for e in r.experience %}
+    <div class="job"><span>{{ e.start_date }} – {{ e.end_date or 'now' }}</span>
+      <b>{{ e.title }}</b><i>{{ e.company }}</i></div>
+    {% endfor %}
+    {% for ed in r.education %}
+    <div class="job"><span>{{ ed.start_date }} – {{ ed.end_date }}</span>
+      <b>{{ ed.degree }}</b><i>{{ ed.institution }}</i></div>
+    {% endfor %}
+  </div>
+
+  <div class="tile heat">
+    <h2>Shipping activity</h2>
+    <div class="heatgrid">
+      {% for i in range(130) %}<i style="opacity: {{ [0.07, 0.16, 0.32, 0.58, 0.9][(i * 37 + (i * i) // 3) % 23 % 5] }}"></i>{% endfor %}
+    </div>
+    <small>always building — {{ n_projects }} shipped projects and counting</small>
+  </div>
+
+  <div class="tile links">
+    {%- set contact_items = [] -%}
+    {%- if github %}{% set _ = contact_items.append(('⌥', 'GitHub', 'code', 'https://' + github | replace('https://',''))) %}{% endif -%}
+    {%- if linkedin %}{% set _ = contact_items.append(('in', 'LinkedIn', 'career', 'https://' + linkedin | replace('https://',''))) %}{% endif -%}
+    {%- if r.phone %}{% set _ = contact_items.append(('☎', 'Call', 'talk', 'tel:' + r.phone | replace(' ',''))) %}{% endif -%}
+    {%- if website %}{% set _ = contact_items.append(('🌐', 'Website', 'visit', 'https://' + website | replace('https://',''))) %}{% endif -%}
+    {%- for icon, label, sub, href in contact_items[:4] %}
+    <a class="link-big" href="{{ href }}"{% if not href.startswith('mailto') and not href.startswith('tel') %} target="_blank"{% endif %}>
+      <span>{{ icon }}</span>{{ label }}<small> · {{ sub }}</small></a>
+    {%- endfor %}
+  </div>
+
+  <div class="tile contact" id="contact">
+    <h3>Let's build something.</h3>
+    <p class="sub">{{ r.location }}{% if r.phone %} · {{ r.phone }}{% endif %}</p>
+    {% if r.email %}<a class="btn magnet" href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}
+  </div>
+</div>
+<footer>© <span id="y"></span> {{ r.name }} · built with ResuMate AI</footer>
+
+<script>
+(function(){
+  document.getElementById('y').textContent = new Date().getFullYear();
+  function tick(){
+    var d = new Date();
+    document.getElementById('clock').textContent =
+      String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  tick(); setInterval(tick, 15000);
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var tiles = [].slice.call(document.querySelectorAll('.tile'));
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if (e.isIntersecting) {
+        var idx = tiles.indexOf(e.target);
+        e.target.style.transitionDelay = (idx % 4) * 70 + 'ms';
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  tiles.forEach(function(t){ io.observe(t); });
+
+  if (!reduced) {
+    document.querySelectorAll('.tilt').forEach(function(el){
+      el.addEventListener('mousemove', function(ev){
+        var rc = el.getBoundingClientRect();
+        var rx = ((ev.clientY - rc.top) / rc.height - .5) * -8;
+        var ry = ((ev.clientX - rc.left) / rc.width - .5) * 8;
+        el.style.transform = 'perspective(700px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+      });
+      el.addEventListener('mouseleave', function(){ el.style.transform = ''; });
+    });
+    document.querySelectorAll('.magnet').forEach(function(el){
+      el.addEventListener('mousemove', function(ev){
+        var rc = el.getBoundingClientRect();
+        el.style.transform = 'translate(' + (ev.clientX - rc.left - rc.width/2) * .22 + 'px,'
+                                          + (ev.clientY - rc.top - rc.height/2) * .3 + 'px)';
+      });
+      el.addEventListener('mouseleave', function(){ el.style.transform = ''; });
+    });
+  }
+
+  var counted = false;
+  function countUp(){
+    if (counted) return; counted = true;
+    document.querySelectorAll('[data-count]').forEach(function(el){
+      var end = +el.dataset.count, t0 = performance.now();
+      (function frame(now){
+        var p = Math.min(1, (now - t0) / 1100);
+        el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(frame);
+      })(t0);
+    });
+  }
+  new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting) countUp(); }); },
+    { threshold: 0.4 }).observe(document.querySelector('.stats'));
+
+  addEventListener('scroll', function(){
+    var h = document.documentElement;
+    document.getElementById('bar').style.width =
+      (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+  }, { passive: true });
+
+  // click-to-uncover covers (first click peels the lid, second click opens details)
+  document.querySelectorAll('.cover').forEach(function(c){
+    c.addEventListener('click', function(e){
+      e.stopPropagation();
+      c.classList.add('off');
+    });
+  });
+
+  // cursor spotlight
+  if (!reduced) addEventListener('mousemove', function(e){
+    document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+    document.documentElement.style.setProperty('--my', e.clientY + 'px');
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

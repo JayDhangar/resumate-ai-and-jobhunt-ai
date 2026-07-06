@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{{ r.name }} — Portfolio</title>
+<style>
+  :root { --acc: {{ accent }}; --acc-dark: {{ accent_dark }}; --bg: #070a08; --dim: rgba({{ accent_rgb }}, 0.55); }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--acc);
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 15px; line-height: 1.65; padding-bottom: 120px;
+  }
+  ::selection { background: var(--acc); color: var(--bg); }
+  .crt::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 3px);
+    animation: flicker 6s infinite;
+  }
+  @keyframes flicker { 0%,100% { opacity: .8 } 48% { opacity: .8 } 50% { opacity: .55 } 52% { opacity: .8 } }
+  .glow { text-shadow: 0 0 8px var(--dim), 0 0 24px rgba({{ accent_rgb }}, 0.25); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 40px 22px; }
+  .bar {
+    position: sticky; top: 0; z-index: 40; background: rgba(7,10,8,0.92); backdrop-filter: blur(4px);
+    border-bottom: 1px solid rgba({{ accent_rgb }}, 0.25); padding: 10px 22px;
+    display: flex; gap: 10px; align-items: center; font-size: 13px;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
+  .dot:nth-child(2) { background: #febc2e; } .dot:nth-child(3) { background: #28c840; }
+  .bar span { color: var(--dim); margin-left: 8px; }
+  .prompt { color: var(--acc-light, var(--acc)); }
+  .prompt b { color: #9ef;  font-weight: 600; }
+  .cursor { display: inline-block; width: 9px; height: 18px; background: var(--acc); vertical-align: text-bottom;
+            animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0 } }
+  section { margin-top: 46px; opacity: 0; transform: translateY(8px); transition: opacity .5s, transform .5s; }
+  section.on { opacity: 1; transform: none; }
+  .cmd { color: var(--dim); margin-bottom: 12px; }
+  .cmd .typed { color: var(--acc); }
+  .out { color: #cfe8cf; padding-left: 2px; }
+  .out h1 { font-size: clamp(30px, 6vw, 54px); color: var(--acc); letter-spacing: 1px; }
+  .out .role { color: #9ef; }
+  .kv { color: var(--dim); } .kv b { color: #cfe8cf; font-weight: 500; }
+  a { color: #9ef; text-decoration: none; border-bottom: 1px dashed rgba(153,238,255,.4); }
+  a:hover { background: rgba(153,238,255,.12); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 8px; }
+  .chip { border: 1px solid rgba({{ accent_rgb }}, .35); padding: 3px 10px; border-radius: 4px;
+          display: inline-block; margin: 3px 4px 3px 0; color: #cfe8cf; font-size: 13px;
+          transition: all .15s; cursor: default; }
+  .chip:hover { background: var(--acc); color: var(--bg); box-shadow: 0 0 14px var(--dim); }
+  .proj { border: 1px solid rgba({{ accent_rgb }}, .3); border-radius: 6px; padding: 14px 16px; margin: 10px 0;
+          cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+  .proj:hover { border-color: var(--acc); box-shadow: 0 0 18px rgba({{ accent_rgb }}, .15); }
+  .proj .pname { color: var(--acc); font-weight: 600; }
+  .proj .pname::before { content: "▸ "; transition: transform .2s; display: inline-block; }
+  .proj.open .pname::before { transform: rotate(90deg); }
+  .proj .body { max-height: 0; overflow: hidden; transition: max-height .45s ease; color: #cfe8cf; }
+  .proj.open .body { max-height: 400px; padding-top: 10px; }
+  .xp { border-left: 2px solid rgba({{ accent_rgb }}, .4); margin: 14px 0 14px 4px; padding: 2px 0 2px 16px; }
+  .xp .t { color: var(--acc); font-weight: 600; } .xp .c { color: #9ef; font-size: 13px; }
+  .xp ul { padding-left: 18px; color: #cfe8cf; } .xp li { margin: 3px 0; }
+  .term {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 45;
+    background: rgba(5,7,5,0.97); border-top: 1px solid rgba({{ accent_rgb }}, .4); padding: 12px 22px;
+  }
+  .term input { background: transparent; border: none; outline: none; color: var(--acc);
+                font: inherit; width: 70%; }
+  #tout { max-height: 180px; overflow-y: auto; font-size: 13px; color: #cfe8cf; }
+  #tout div { margin: 2px 0; }
+  .hint { color: rgba({{ accent_rgb }}, .5); font-size: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    section { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body class="crt">
+<div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  <span>{{ slug }}@portfolio: ~/{{ first_name | lower }}</span></div>
+
+<div class="wrap">
+  <section id="hero" class="on">
+    <div class="cmd glow"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="whoami"></span><span class="cursor" id="c0"></span></div>
+    <div class="out" data-reveal>
+      <h1 class="glow">{{ r.name }}</h1>
+      <p class="role">{{ r.headline }}</p>
+      <p class="kv">📍 <b>{{ r.location }}</b>{% if r.email %} · ✉ <a href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}</p>
+      <p class="kv">
+        {% if github %}<a href="https://{{ github | replace('https://','') }}" target="_blank">github</a> · {% endif %}
+        {% if linkedin %}<a href="https://{{ linkedin | replace('https://','') }}" target="_blank">linkedin</a>{% endif %}
+        {% if website %} · <a href="https://{{ website | replace('https://','') }}" target="_blank">website</a>{% endif %}
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="cat about.md"></span></div>
+    <div class="out" data-reveal><p>{{ r.summary }}</p></div>
+  </section>
+
+  <section>
+    <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="./skills --list"></span></div>
+    <div class="out" data-reveal>
+      {% for g in r.skills %}
+      <p class="kv" style="margin-top:8px"><b>{{ g.category or 'core' }}</b>:</p>
+      <div>{% for s in g.skills %}<span class="chip">{{ s }}</span>{% endfor %}</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="ls projects/ --details"></span></div>
+    <div class="out" data-reveal>
+      {% for p in r.projects %}
+      <div class="proj" onclick="this.classList.toggle('open')">
+        <div class="pname">{{ p.name }}</div>
+        <div class="body">
+          <p>{{ p.description }}</p>
+          {% if p.bullets %}<ul>{% for b in p.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+          {% if p.technologies %}<p class="kv">stack: <b>{{ p.technologies | join(', ') }}</b></p>{% endif %}
+          {% if p.link %}<a href="{{ p.link }}" target="_blank">open →</a>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% if not r.projects %}<p class="kv">// project files coming soon</p>{% endif %}
+    </div>
+  </section>
+
+  <section>
+    <div class="cmd"><span class="prompt"><b>{{ slug }}@portfolio</b>:~$</span> <span class="typed" data-type="git log --experience"></span></div>
+    <div class="out" data-reveal>
+      {% for e in r.experience %}
+      <div class="xp">
+        <div class="t">{{ e.title }}</div>
+        <div class="c">{{ e.company }}{% if e.location %} · {{ e.location }}{% endif %} · {{ e.start_date }} → {{ e.end_date or 'now' }}</div>
+        <ul>{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+      {% for ed in r.education %}
+      <div class="xp"><div class="t">{{ ed.degree }}</div>
+        <div class="c">{{ ed.institution }} · {{ ed.start_date }} – {{ ed.end_date }}{% if ed.gpa %} · GPA {{ ed.gpa }}{% endif %}</div></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="term">
+  <div id="tout"></div>
+  <span class="prompt"><b>guest</b>@{{ slug }}:~$</span>
+  <input id="tin" autocomplete="off" spellcheck="false" placeholder="type 'help' and press Enter…"/>
+  <div class="hint">try: help · skills · contact · sudo hire-me</div>
+</div>
+
+<script>
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function type(el, done){
+    var text = el.dataset.type, i = 0;
+    if (reduced) { el.textContent = text; done && done(); return; }
+    (function tick(){
+      el.textContent = text.slice(0, ++i);
+      if (i < text.length) setTimeout(tick, 34 + Math.random()*40); else done && done();
+    })();
+  }
+  var hero = document.querySelector('#hero .typed');
+  var reveal0 = document.querySelector('#hero [data-reveal]');
+  reveal0.style.opacity = 0;
+  type(hero, function(){
+    var c = document.getElementById('c0'); if (c) c.remove();
+    reveal0.style.transition = 'opacity .6s'; reveal0.style.opacity = 1;
+  });
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if (!e.isIntersecting || e.target.classList.contains('on')) return;
+      e.target.classList.add('on');
+      var t = e.target.querySelector('.typed'), out = e.target.querySelector('[data-reveal]');
+      if (t && out) { out.style.opacity = 0; type(t, function(){ out.style.transition='opacity .6s'; out.style.opacity = 1; }); }
+    });
+  }, { threshold: 0.25 });
+  document.querySelectorAll('section:not(#hero)').forEach(function(s){ io.observe(s); });
+
+  var THEMES = { green: '51,255,102', amber: '255,190,60', cyan: '80,220,255', pink: '255,110,199' };
+  function setTheme(name){
+    var rgb = THEMES[name]; if (!rgb) return false;
+    var hex = '#' + rgb.split(',').map(function(v){ return (+v).toString(16).padStart(2,'0'); }).join('');
+    var st = document.createElement('style');
+    st.textContent = ':root{--acc:' + hex + ';--dim:rgba(' + rgb + ',.55)}' +
+      '.chip{border-color:rgba(' + rgb + ',.35)} .proj{border-color:rgba(' + rgb + ',.3)}' +
+      '.xp{border-color:rgba(' + rgb + ',.4)} .bar{border-color:rgba(' + rgb + ',.25)}' +
+      '.term{border-color:rgba(' + rgb + ',.4)}';
+    document.head.appendChild(st);
+    return true;
+  }
+  var NEOFETCH = [
+    '   ╭─────────────╮   {{ r.name }}',
+    '   │  ▄▄▄   ▄▄▄  │   ─────────────────────────',
+    '   │  ███   ███  │   role:     {{ roles[0] }}',
+    '   │      ▄      │   os:       Human v{{ (r.education[0].end_date if r.education else "2024") }}',
+    '   │  ▀▀▀▀▀▀▀▀▀  │   shell:    {{ (r.skills[0].skills[0] if r.skills else "python") | lower }}',
+    '   ╰─────────────╯   memory:   {{ n_skills }} skills loaded',
+    '                     uptime:   {{ r.experience | length }} roles, {{ n_projects }} projects',
+    '                     location: {{ r.location }}',
+    '                     contact:  {{ r.email }}'
+  ].join('\n');
+  function matrix(){
+    var cv = document.createElement('canvas'); cv.style.cssText =
+      'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.86)';
+    document.body.appendChild(cv);
+    cv.width = innerWidth; cv.height = innerHeight;
+    var g = cv.getContext('2d'), cols = Math.floor(innerWidth / 16), drops = [];
+    for (var i = 0; i < cols; i++) drops[i] = Math.random() * -40;
+    var iv = setInterval(function(){
+      g.fillStyle = 'rgba(0,0,0,0.08)'; g.fillRect(0, 0, cv.width, cv.height);
+      g.fillStyle = 'rgb({{ accent_rgb }})'; g.font = '15px monospace';
+      drops.forEach(function(y, i){
+        g.fillText(String.fromCharCode(0x30a0 + Math.random() * 96), i * 16, y * 16);
+        drops[i] = y * 16 > cv.height && Math.random() > .975 ? 0 : y + 1;
+      });
+    }, 40);
+    setTimeout(function(){ clearInterval(iv); cv.remove(); }, 5200);
+    return 'wake up, recruiter…';
+  }
+  var RESP = {
+    help: 'commands: about · skills · projects · contact · neofetch · theme <green|amber|cyan|pink> · matrix · clear · sudo hire-me   (↑ history · Tab complete)',
+    about: {{ (r.summary or 'Engineer.') | tojson }},
+    skills: {{ flat_skills | join(', ') | tojson }},
+    projects: {{ r.projects | map(attribute='name') | list | join(' · ') | tojson }},
+    contact: 'email: {{ r.email }}{% if linkedin %} · linkedin: {{ linkedin }}{% endif %}{% if github %} · github: {{ github }}{% endif %}',
+    neofetch: NEOFETCH,
+    whoami: '{{ r.name }} — {{ roles[0] }}',
+    matrix: matrix,
+    'sudo hire-me': 'Permission granted ✔ — {{ r.email }} is waiting for your message.'
+  };
+  var CMDS = Object.keys(RESP).concat(['clear', 'theme ']);
+  var tin = document.getElementById('tin'), tout = document.getElementById('tout');
+  var history = [], hi = -1;
+  tin.addEventListener('keydown', function(ev){
+    if (ev.key === 'ArrowUp') { ev.preventDefault();
+      if (history.length) { hi = Math.min(hi + 1, history.length - 1); tin.value = history[history.length - 1 - hi]; } return; }
+    if (ev.key === 'ArrowDown') { ev.preventDefault();
+      if (hi > 0) { hi--; tin.value = history[history.length - 1 - hi]; } else { hi = -1; tin.value = ''; } return; }
+    if (ev.key === 'Tab') { ev.preventDefault();
+      var v = tin.value.toLowerCase();
+      var match = CMDS.filter(function(c){ return c.indexOf(v) === 0 && v; })[0];
+      if (match) tin.value = match; return; }
+    if (ev.key !== 'Enter') return;
+    var q = tin.value.trim().toLowerCase(); tin.value = ''; hi = -1;
+    if (!q) return;
+    history.push(q);
+    if (q === 'clear') { tout.innerHTML = ''; return; }
+    var line = document.createElement('div');
+    line.innerHTML = '<span class="prompt">$</span> ' + q.replace(/</g,'&lt;');
+    tout.appendChild(line);
+    var ans = document.createElement('pre');
+    ans.style.cssText = 'margin:0;font:inherit;white-space:pre-wrap';
+    if (q.indexOf('theme ') === 0) {
+      ans.textContent = setTheme(q.slice(6).trim()) ? 'theme applied ✔' : 'themes: green · amber · cyan · pink';
+    } else {
+      var r = RESP[q];
+      ans.textContent = typeof r === 'function' ? r() : (r || ("command not found: " + q + " — try 'help'"));
+    }
+    tout.appendChild(ans);
+    tout.scrollTop = tout.scrollHeight;
+  });
+})();
+</script>
+</body>
+</html>

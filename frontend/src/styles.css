@@ -220,6 +220,35 @@ body {
 .match-pct { font-size: 17px; font-weight: 800; line-height: 1.1; }
 .match-lbl { font-size: 10px; font-weight: 600; opacity: 0.9; }
 
+/* ---- Portfolio modal ---- */
+.portfolio-modal { width: min(1240px, 96vw); height: 92vh; }
+.portfolio-body { display: flex; flex: 1; min-height: 0; }
+.design-list {
+  width: 320px; flex-shrink: 0; overflow-y: auto; padding: 16px;
+  border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 10px;
+}
+.design-card {
+  display: flex; gap: 12px; align-items: flex-start; text-align: left;
+  font: inherit; cursor: pointer; padding: 13px 14px; border-radius: 13px;
+  background: var(--inset); border: 1.5px solid var(--border); color: var(--text);
+  transition: all 0.15s ease;
+}
+.design-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+.design-active { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); background: var(--primary-soft); }
+.design-emoji { font-size: 24px; }
+.design-card b { display: block; font-size: 14px; }
+.design-card small { color: var(--text-muted); font-size: 11.5px; line-height: 1.4; display: block; margin-top: 3px; }
+.portfolio-frame-wrap { flex: 1; min-height: 0; background: #111; }
+.portfolio-frame-wrap .preview-frame { min-height: 100%; height: 100%; }
+.color-input-native {
+  width: 30px; height: 30px; padding: 0; border: 2px solid var(--glass-border);
+  border-radius: 50%; cursor: pointer; background: transparent;
+}
+@media (max-width: 900px) {
+  .portfolio-body { flex-direction: column; }
+  .design-list { width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border); }
+}
+
 /* ---- Fit & Apply modal ---- */
 .fit-modal { width: min(760px, 94vw); }
 .fit-body { padding: 18px 20px; overflow-y: auto; }

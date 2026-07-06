@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from api.routes_generate import router as generate_router
 from api.routes_jobs import router as jobs_router
+from api.routes_portfolio import router as portfolio_router
 from api.routes_resumes import router as resumes_router
 from api.routes_templates import router as templates_router
 from core.config import get_settings
@@ -148,6 +149,7 @@ app.include_router(resumes_router)
 app.include_router(templates_router)
 app.include_router(generate_router)
 app.include_router(jobs_router)
+app.include_router(portfolio_router)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{{ r.name }} — Portfolio</title>
+<style>
+  :root { --acc: {{ accent }}; --ink: #16130f; --paper: #f6f2ea; --muted: #7a7468; }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: Georgia, 'Times New Roman', serif;
+         overflow-x: hidden; cursor: none; }
+  a { color: inherit; }
+  .cur { position: fixed; z-index: 99; pointer-events: none; top: 0; left: 0;
+         width: 12px; height: 12px; border-radius: 20px; background: var(--acc);
+         transform: translate(-50%,-50%); transition: width .25s, height .25s, border-radius .25s;
+         display: flex; align-items: center; justify-content: center;
+         color: #fff; font: 700 11px/1 'Segoe UI', sans-serif; letter-spacing: 1px; white-space: nowrap; }
+  .cur.view { width: 74px; height: 30px; border-radius: 30px; }
+  .cur .t { opacity: 0; transition: opacity .2s; } .cur.view .t { opacity: 1; }
+  @media (pointer: coarse) { body { cursor: auto; } .cur { display: none; } }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex;
+        justify-content: space-between; padding: 22px 5vw; mix-blend-mode: darken;
+        font: 600 13px 'Segoe UI', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+  .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 0 5vw; }
+  .kicker { font: 600 13px 'Segoe UI', sans-serif; letter-spacing: 4px; text-transform: uppercase;
+            color: var(--acc); margin-bottom: 18px; }
+  h1 { font-size: clamp(52px, 11vw, 150px); line-height: .95; letter-spacing: -2px; font-weight: 500; }
+  h1 .ln { display: block; overflow: hidden; }
+  h1 .w { display: inline-block; transform: translateY(115%); animation: rise .9s cubic-bezier(.2,.7,.2,1) forwards; }
+  @keyframes rise { to { transform: none; } }
+  .rot-line { font-size: clamp(22px, 3.4vw, 40px); margin-top: 30px; font-style: italic; color: var(--muted); }
+  .rot { display: inline-block; position: relative; color: var(--acc); font-style: normal;
+         vertical-align: bottom; overflow: hidden; height: 1.25em; }
+  .rot span { display: block; height: 1.25em; transition: transform .55s cubic-bezier(.6,0,.2,1); }
+  .scroll-hint { position: absolute; bottom: 30px; left: 5vw; font: 600 12px 'Segoe UI', sans-serif;
+                 letter-spacing: 2px; color: var(--muted); animation: bob 2s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(7px); } }
+
+  section { padding: 14vh 5vw; }
+  .idx { font: 700 13px 'Segoe UI', sans-serif; color: var(--acc); letter-spacing: 3px; margin-bottom: 26px; }
+  .rev { overflow: hidden; }
+  .rev > * { transform: translateY(110%); transition: transform .85s cubic-bezier(.2,.7,.2,1); }
+  .rev.on > * { transform: none; }
+  .about p { font-size: clamp(22px, 3vw, 36px); line-height: 1.45; max-width: 26ch; }
+  .about p em { font-style: normal; border-bottom: 3px solid var(--acc); }
+
+  .strip-wrap { height: 340vh; position: relative; }
+  .strip-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden;
+                  display: flex; align-items: center; background: var(--ink); color: var(--paper); }
+  .strip { display: flex; gap: 5vw; padding: 0 6vw; will-change: transform; }
+  .card { flex: 0 0 62vw; max-width: 640px; border: 1px solid rgba(246,242,234,.22); padding: 44px;
+          border-radius: 4px; }
+  .card .no { font: 700 60px Georgia, serif; color: var(--acc); }
+  .card h3 { font-size: clamp(26px, 3.4vw, 42px); margin: 12px 0; }
+  .card p { color: rgba(246,242,234,.72); font-size: 16.5px; line-height: 1.6;
+            font-family: 'Segoe UI', sans-serif; }
+  .card .tech { margin-top: 20px; font: 600 12px 'Segoe UI', sans-serif; letter-spacing: 2px;
+                text-transform: uppercase; color: var(--acc); }
+  .card { cursor: none; transition: transform .25s, border-color .25s; }
+  .card:hover { transform: translateY(-8px); border-color: var(--acc); }
+  .openhint { margin-top: 16px; font: 700 11px 'Segoe UI', sans-serif; letter-spacing: 2px;
+              color: rgba(246,242,234,.4); }
+  .card:hover .openhint { color: var(--acc); }
+
+  .lb { position: fixed; inset: 0; z-index: 200; background: rgba(22,19,15,.78); display: none;
+        align-items: center; justify-content: center; padding: 4vw; backdrop-filter: blur(6px); }
+  .lb.show { display: flex; }
+  .lb-in { background: var(--paper); color: var(--ink); max-width: 720px; width: 100%;
+           max-height: 86vh; overflow-y: auto; padding: 48px; position: relative;
+           animation: lbpop .45s cubic-bezier(.2,.8,.3,1.1); border-top: 8px solid var(--acc); }
+  @keyframes lbpop { from { transform: translateY(50px) scale(.96); opacity: 0; } }
+  .lb-in .no { font: 700 54px Georgia, serif; color: var(--acc); }
+  .lb-in h3 { font-size: clamp(28px, 4vw, 44px); margin: 8px 0 16px; }
+  .lb-in p { font: 16px/1.65 'Segoe UI', sans-serif; color: #4c463c; }
+  .lb-in ul { font: 15px/1.7 'Segoe UI', sans-serif; color: #4c463c; padding-left: 20px; margin: 14px 0; }
+  .lb-in .tech { margin-top: 18px; }
+  .lb-in .plink { display: inline-block; margin-top: 20px; font: 700 14px 'Segoe UI', sans-serif;
+                  background: var(--acc); color: #fff; padding: 12px 26px; border-radius: 40px;
+                  text-decoration: none; }
+  .lb-x { position: absolute; top: 16px; right: 20px; font: 700 26px 'Segoe UI', sans-serif;
+          cursor: pointer; border: none; background: none; color: var(--ink); }
+  .lb, .lb * { cursor: auto; }
+
+  .xp-row { display: flex; justify-content: space-between; gap: 3vw; align-items: baseline;
+            padding: 30px 0; border-top: 1px solid rgba(22,19,15,.18); flex-wrap: wrap; }
+  .xp-row h3 { font-size: clamp(24px, 3.4vw, 40px); font-weight: 500; }
+  .xp-row .co { color: var(--acc); font-style: italic; }
+  .xp-row .dt { font: 600 13px 'Segoe UI', sans-serif; color: var(--muted); letter-spacing: 1px; }
+  .xp-row p { flex-basis: 100%; font-family: 'Segoe UI', sans-serif; color: var(--muted);
+              font-size: 15px; max-width: 70ch; }
+
+  .contact { background: var(--acc); color: #fff; text-align: center; padding: 16vh 5vw; }
+  .contact h2 { font-size: clamp(40px, 8vw, 110px); letter-spacing: -2px; line-height: 1; }
+  .contact a.mail { display: inline-block; margin-top: 34px; font: 600 16px 'Segoe UI', sans-serif;
+                    border: 2px solid #fff; padding: 16px 36px; border-radius: 50px;
+                    text-decoration: none; transition: all .25s; }
+  .contact a.mail:hover { background: #fff; color: var(--acc); }
+  .foot { display: flex; gap: 26px; justify-content: center; margin-top: 30px;
+          font: 600 13px 'Segoe UI', sans-serif; letter-spacing: 1px; }
+  .foot a { text-decoration: none; opacity: .85; }
+  @media (prefers-reduced-motion: reduce) {
+    h1 .w { animation: none; transform: none; }
+    .rev > * { transform: none; transition: none; }
+    .strip-wrap { height: auto; } .strip-sticky { position: static; height: auto; }
+    .strip { flex-wrap: wrap; padding: 40px 5vw; } .card { flex-basis: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="cur" id="cur"><span class="t">VIEW →</span></div>
+<nav><span>{{ r.name }}</span><span>{{ r.location }}</span></nav>
+
+<header class="hero">
+  <div class="kicker">Portfolio — {{ roles[0] }}</div>
+  <h1 id="name">
+    {% for word in r.name.split() %}
+    <span class="ln"><span class="w" style="animation-delay: {{ loop.index0 * 140 }}ms">{{ word }}</span></span>
+    {% endfor %}
+  </h1>
+  <div class="rot-line">I build&nbsp;<span class="rot" id="rot">
+    {% for role in roles %}<span>{{ role }}.</span>{% endfor %}
+    <span>{{ roles[0] }}.</span>
+  </span></div>
+  <div class="scroll-hint">SCROLL ↓</div>
+</header>
+
+<section class="about">
+  <div class="idx">01 — ABOUT</div>
+  <div class="rev"><p>{{ r.summary }}</p></div>
+  <div class="rev" style="margin-top:34px"><p style="font-size:16px;font-family:'Segoe UI',sans-serif;color:var(--muted);max-width:60ch">
+    {{ flat_skills | join(' · ') }}</p></div>
+</section>
+
+<div class="strip-wrap" id="stripWrap">
+  <div class="strip-sticky">
+    <div class="strip" id="strip">
+      <div class="card"><div class="no">✳</div><h3>Selected work</h3>
+        <p>{{ n_projects }} projects — scroll to travel through them.</p></div>
+      {% for p in r.projects %}
+      <div class="card" data-view onclick="openProj({{ loop.index0 }})">
+        <div class="no">{{ '%02d' | format(loop.index) }}</div>
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.description }}</p>
+        <div class="tech">{{ p.technologies | join(' · ') }}</div>
+        <div class="openhint">CLICK TO OPEN ↗</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="idx">02 — EXPERIENCE</div>
+  {% for e in r.experience %}
+  <div class="xp-row">
+    <h3>{{ e.title }} <span class="co">@ {{ e.company }}</span></h3>
+    <span class="dt">{{ e.start_date }} — {{ e.end_date or 'NOW' }}</span>
+    {% if e.bullets %}<p>{{ e.bullets[0] }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% for ed in r.education %}
+  <div class="xp-row">
+    <h3>{{ ed.degree }} <span class="co">· {{ ed.institution }}</span></h3>
+    <span class="dt">{{ ed.start_date }} — {{ ed.end_date }}</span>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="contact">
+  <h2>Let's make<br/>something rare.</h2>
+  {% if r.email %}<a class="mail" href="mailto:{{ r.email }}" data-view>{{ r.email }}</a>{% endif %}
+  <div class="foot">
+    {% if github %}<a href="https://{{ github | replace('https://','') }}" target="_blank">GITHUB</a>{% endif %}
+    {% if linkedin %}<a href="https://{{ linkedin | replace('https://','') }}" target="_blank">LINKEDIN</a>{% endif %}
+    {% if website %}<a href="https://{{ website | replace('https://','') }}" target="_blank">WEBSITE</a>{% endif %}
+  </div>
+</section>
+
+<div class="lb" id="lb" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="lb-in">
+    <button class="lb-x" onclick="document.getElementById('lb').classList.remove('show')">×</button>
+    <div class="no" id="lbNo"></div>
+    <h3 id="lbTitle"></h3>
+    <p id="lbDesc"></p>
+    <ul id="lbBullets"></ul>
+    <div class="tech" id="lbTech"></div>
+    <a class="plink" id="lbLink" target="_blank" style="display:none">Open project ↗</a>
+  </div>
+</div>
+
+<script>
+var PROJECTS = [
+  {% for p in r.projects %}
+  { no: "{{ '%02d' | format(loop.index) }}", title: {{ p.name | tojson }}, desc: {{ p.description | tojson }},
+    bullets: {{ p.bullets | list | tojson }}, tech: {{ p.technologies | join(' · ') | tojson }},
+    link: {{ p.link | tojson }} },
+  {% endfor %}
+];
+function openProj(i){
+  var p = PROJECTS[i]; if (!p) return;
+  document.getElementById('lbNo').textContent = p.no;
+  document.getElementById('lbTitle').textContent = p.title;
+  document.getElementById('lbDesc').textContent = p.desc;
+  var ul = document.getElementById('lbBullets'); ul.innerHTML = '';
+  p.bullets.forEach(function(b){ var li = document.createElement('li'); li.textContent = b; ul.appendChild(li); });
+  document.getElementById('lbTech').textContent = p.tech;
+  var a = document.getElementById('lbLink');
+  if (p.link) { a.href = p.link; a.style.display = 'inline-block'; } else a.style.display = 'none';
+  document.getElementById('lb').classList.add('show');
+}
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') document.getElementById('lb').classList.remove('show');
+});
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var cur = document.getElementById('cur'), cx = 0, cy = 0, tx = 0, ty = 0;
+  addEventListener('mousemove', function(e){ tx = e.clientX; ty = e.clientY; });
+  (function lerp(){
+    cx += (tx - cx) * .18; cy += (ty - cy) * .18;
+    cur.style.transform = 'translate(' + (cx - 0) + 'px,' + (cy - 0) + 'px) translate(-50%,-50%)';
+    requestAnimationFrame(lerp);
+  })();
+  document.querySelectorAll('[data-view]').forEach(function(el){
+    el.addEventListener('mouseenter', function(){ cur.classList.add('view'); });
+    el.addEventListener('mouseleave', function(){ cur.classList.remove('view'); });
+  });
+
+  var rot = document.getElementById('rot'), ri = 0, n = rot.children.length;
+  if (!reduced) setInterval(function(){
+    ri = (ri + 1) % n;
+    for (var i = 0; i < n; i++) rot.children[i].style.transform = 'translateY(' + (-ri * 100) + '%)';
+    if (ri === n - 1) setTimeout(function(){
+      ri = 0;
+      for (var i = 0; i < n; i++) { rot.children[i].style.transition = 'none';
+        rot.children[i].style.transform = 'translateY(0)'; }
+      void rot.offsetHeight;
+      for (var i = 0; i < n; i++) rot.children[i].style.transition = '';
+    }, 560);
+  }, 2200);
+
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('on'); });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.rev').forEach(function(el){ io.observe(el); });
+
+  var wrap = document.getElementById('stripWrap'), strip = document.getElementById('strip');
+  if (!reduced) addEventListener('scroll', function(){
+    var rc = wrap.getBoundingClientRect();
+    var total = wrap.offsetHeight - innerHeight;
+    var p = Math.min(1, Math.max(0, -rc.top / total));
+    var dist = strip.scrollWidth - innerWidth + innerWidth * 0.08;
+    strip.style.transform = 'translateX(' + (-p * dist) + 'px)';
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

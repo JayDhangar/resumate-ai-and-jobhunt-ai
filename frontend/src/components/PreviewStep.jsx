@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
 import { Spinner } from './Loader.jsx'
+import PortfolioModal from './PortfolioModal.jsx'
 
 const FORMATS = [
   { fmt: 'pdf', label: 'PDF' }, { fmt: 'docx', label: 'DOCX' },
@@ -18,6 +19,7 @@ export default function PreviewStep({
   const [src, setSrc] = useState('')
   const [slug, setSlug] = useState(resume.public_slug || '')
   const [publishing, setPublishing] = useState(false)
+  const [portfolioOpen, setPortfolioOpen] = useState(false)
 
   const togglePublish = async () => {
     setPublishing(true)
@@ -86,8 +88,15 @@ export default function PreviewStep({
               /r/{slug} ↗
             </a>
           )}
+          <button className="btn btn-outline" onClick={() => setPortfolioOpen(true)}
+            title="Optional: generate an animated personal portfolio website from this resume">
+            🌐 Build Portfolio
+          </button>
         </div>
       </div>
+      {portfolioOpen && (
+        <PortfolioModal resume={resume} notify={notify} onClose={() => setPortfolioOpen(false)} />
+      )}
       {editable && (
         <p className="muted small note-line">
           In-place edits are visual only — persistent content changes belong in “Your Details” or AI edits.

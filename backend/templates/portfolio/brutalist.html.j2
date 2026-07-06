@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{{ r.name }} — PORTFOLIO</title>
+<style>
+  :root { --acc: {{ accent }}; --ink: #111111; --paper: #f2efe6; }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink);
+         font-family: 'Segoe UI', Arial, sans-serif; overflow-x: hidden; }
+  body.inv { background: var(--ink); color: var(--paper); }
+  body.inv .blk { background: var(--ink); border-color: var(--paper); box-shadow: 9px 9px 0 var(--paper); }
+  body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 90; opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .marq { background: var(--ink); color: var(--paper); overflow: hidden; border-bottom: 4px solid var(--ink);
+          font-weight: 900; letter-spacing: 2px; font-size: 15px; }
+  .marq div { display: inline-flex; gap: 34px; white-space: nowrap; padding: 9px 0;
+              animation: mq 20s linear infinite; }
+  .marq span::after { content: " ★"; color: var(--acc); }
+  @keyframes mq { to { transform: translateX(-50%); } }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 42px 22px; }
+  .blk { border: 4px solid var(--ink); background: var(--paper); box-shadow: 9px 9px 0 var(--ink);
+         padding: 30px; margin-bottom: 34px; position: relative;
+         clip-path: inset(0 100% 0 0);
+         transition: clip-path .45s cubic-bezier(.9,0,.1,1), transform .13s, box-shadow .13s,
+                     background .2s, color .2s, border-color .2s; }
+  .blk.on { clip-path: inset(0 0 0 0); }
+  .blk:hover { transform: translate(-5px, -5px); box-shadow: 14px 14px 0 var(--ink); }
+  body.inv .blk:hover { box-shadow: 14px 14px 0 var(--paper); }
+
+  h1 { font-size: clamp(52px, 12vw, 130px); font-weight: 900; text-transform: uppercase;
+       line-height: .88; letter-spacing: -3px; }
+  h1 .hl { background: var(--acc); padding: 0 10px; display: inline-block; }
+  .role { font-size: clamp(17px, 2.6vw, 26px); font-weight: 800; text-transform: uppercase;
+          margin-top: 18px; border-top: 4px solid var(--ink); padding-top: 14px; }
+  .meta { font-weight: 700; margin-top: 10px; font-size: 14px; }
+  .meta a { color: inherit; background: var(--acc); padding: 2px 8px; text-decoration: none;
+            border: 2px solid var(--ink); display: inline-block; margin: 3px 4px 0 0;
+            transition: transform .1s; }
+  .meta a:hover { transform: translate(-2px,-2px) rotate(-1deg); }
+
+  .sticker { position: absolute; top: -18px; right: 16px; background: var(--acc); border: 3px solid var(--ink);
+             padding: 7px 16px; font-weight: 900; font-size: 13px; letter-spacing: 1px;
+             transform: rotate(5deg); text-transform: uppercase; color: var(--ink);
+             animation: wob 3.2s ease-in-out infinite; }
+  @keyframes wob { 50% { transform: rotate(-3deg); } }
+
+  h2 { font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px;
+       background: var(--ink); color: var(--paper); display: inline-block; padding: 5px 14px;
+       margin-bottom: 20px; }
+  .skills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sk { border: 3px solid var(--ink); padding: 7px 14px; font-weight: 800; font-size: 14px;
+        text-transform: uppercase; cursor: default; transition: all .1s; background: var(--paper); color: var(--ink); }
+  .sk:hover { background: var(--acc); transform: rotate(-2deg) scale(1.06); }
+
+  .prow { border: 4px solid var(--ink); border-bottom: none; padding: 20px 22px; cursor: pointer;
+          background: var(--paper); color: var(--ink); transition: background .12s, color .12s; }
+  .prow:last-child { border-bottom: 4px solid var(--ink); }
+  .prow:hover { background: var(--acc); }
+  .prow.open { background: var(--ink); color: var(--paper); }
+  .prow h3 { font-size: clamp(20px, 3.4vw, 32px); font-weight: 900; text-transform: uppercase; }
+  .prow h3::before { content: "→ "; color: var(--acc); }
+  .prow.open h3::before { content: "↓ "; }
+  .prow .det { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.9,0,.1,1);
+               font-weight: 600; }
+  .prow.open .det { max-height: 360px; padding-top: 14px; }
+  .prow .det ul { padding-left: 22px; margin: 8px 0; }
+  .prow .tech { font-weight: 900; font-size: 12.5px; letter-spacing: 1.5px; text-transform: uppercase;
+                color: var(--acc); }
+  .prow.open .tech { color: var(--acc); }
+
+  .xp { display: grid; grid-template-columns: 130px 1fr; gap: 4px 20px; padding: 16px 0;
+        border-bottom: 3px dashed var(--ink); }
+  .xp:last-child { border: none; }
+  .xp .dt { font-weight: 900; font-size: 13px; }
+  .xp h3 { font-size: 20px; font-weight: 900; text-transform: uppercase; }
+  .xp .co { font-weight: 700; } .xp .co b { background: var(--acc); padding: 0 6px; }
+  .xp ul { grid-column: 2; padding-left: 20px; font-weight: 600; font-size: 14.5px; }
+
+  .shout { text-align: center; padding: 40px 20px; }
+  .shout h2 { font-size: clamp(34px, 7vw, 80px); background: none; color: inherit;
+              letter-spacing: -2px; padding: 0; text-transform: uppercase; font-weight: 900; }
+  .shout .mail { display: inline-block; margin-top: 24px; font-size: clamp(16px, 3vw, 26px); font-weight: 900;
+                 background: var(--acc); color: var(--ink); border: 4px solid var(--ink);
+                 box-shadow: 8px 8px 0 var(--ink); padding: 16px 30px; text-decoration: none;
+                 transition: all .12s; text-transform: lowercase; }
+  .shout .mail:hover { transform: translate(-4px,-4px); box-shadow: 12px 12px 0 var(--ink); }
+  body.inv .shout .mail { border-color: var(--paper); box-shadow: 8px 8px 0 var(--paper); }
+  .invbtn { position: fixed; bottom: 18px; right: 18px; z-index: 95; background: var(--acc);
+            border: 3px solid var(--ink); font-weight: 900; padding: 10px 16px; cursor: pointer;
+            font-size: 13px; text-transform: uppercase; box-shadow: 5px 5px 0 var(--ink); }
+  .invbtn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+  @media (max-width: 700px) { .xp { grid-template-columns: 1fr; } .xp ul { grid-column: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .blk { clip-path: none; transition: none; }
+    .marq div, .sticker { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="marq"><div>
+  {% for i in range(6) %}<span>{{ r.name | upper }}</span><span>{{ roles[0] | upper }}</span><span>OPEN TO WORK</span>{% endfor %}
+</div></div>
+
+<div class="wrap">
+  <div class="blk on">
+    <div class="sticker">Open to work</div>
+    <h1>{{ r.name.split()[0] | upper }}<br/><span class="hl">{{ r.name.split()[1:] | join(' ') | upper }}</span></h1>
+    <div class="role">{{ r.headline }}</div>
+    <div class="meta">
+      📍 {{ r.location | upper }}
+      {% if r.email %}<a href="mailto:{{ r.email }}">EMAIL</a>{% endif %}
+      {% if github %}<a href="https://{{ github | replace('https://','') }}" target="_blank">GITHUB</a>{% endif %}
+      {% if linkedin %}<a href="https://{{ linkedin | replace('https://','') }}" target="_blank">LINKEDIN</a>{% endif %}
+    </div>
+  </div>
+
+  <div class="blk">
+    <h2>Manifesto</h2>
+    <p style="font-size:clamp(17px,2.4vw,24px);font-weight:700;line-height:1.45">{{ r.summary }}</p>
+  </div>
+
+  <div class="blk">
+    <h2>Arsenal</h2>
+    <div class="skills">{% for s in flat_skills %}<div class="sk">{{ s }}</div>{% endfor %}</div>
+  </div>
+
+  <div class="blk">
+    <div class="sticker" style="animation-delay:.6s">Click them</div>
+    <h2>Work</h2>
+    <div>
+      {% for p in r.projects %}
+      <div class="prow" onclick="this.classList.toggle('open')">
+        <h3>{{ p.name }}</h3>
+        <div class="det">
+          <p>{{ p.description }}</p>
+          <ul>{% for b in p.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+          <div class="tech">{{ p.technologies | join(' / ') }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="blk">
+    <h2>Track record</h2>
+    {% for e in r.experience %}
+    <div class="xp">
+      <div class="dt">{{ e.start_date }} —<br/>{{ e.end_date or 'NOW' }}</div>
+      <div><h3>{{ e.title }}</h3><div class="co">at <b>{{ e.company }}</b>{% if e.location %} · {{ e.location }}{% endif %}</div></div>
+      <ul>{% for b in e.bullets[:3] %}<li>{{ b }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+    {% for ed in r.education %}
+    <div class="xp">
+      <div class="dt">{{ ed.start_date }} —<br/>{{ ed.end_date }}</div>
+      <div><h3>{{ ed.degree }}</h3><div class="co">at <b>{{ ed.institution }}</b>{% if ed.gpa %} · GPA {{ ed.gpa }}{% endif %}</div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="blk shout">
+    <h2>Hire me.<br/>Or regret it.</h2>
+    {% if r.email %}<a class="mail" href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}
+  </div>
+</div>
+
+<div class="marq"><div>
+  {% for i in range(6) %}<span>LET'S BUILD</span><span>{{ 'GITHUB.COM/' + github.split('/')[-1] | upper if github else 'SAY HELLO' }}</span>{% endfor %}
+</div></div>
+
+<button class="invbtn" onclick="document.body.classList.toggle('inv')">⚡ Invert</button>
+
+<script>
+(function(){
+  var blocks = [].slice.call(document.querySelectorAll('.blk:not(.on)'));
+  function reveal(el){ el.classList.add('on'); }
+  try {
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if (e.isIntersecting) { reveal(e.target); io.unobserve(e.target); } });
+    }, { threshold: 0.05, rootMargin: '0px 0px -5% 0px' });
+    blocks.forEach(function(b){ io.observe(b); });
+  } catch (err) {
+    blocks.forEach(reveal);
+  }
+  // fail-safe: whatever happens, nothing stays hidden forever —
+  // any block near the viewport reveals on scroll, and ALL reveal after 6s
+  function sweep(){
+    blocks.forEach(function(b){
+      if (b.classList.contains('on')) return;
+      var rc = b.getBoundingClientRect();
+      if (rc.top < innerHeight * 1.05 && rc.bottom > 0) reveal(b);
+    });
+  }
+  addEventListener('scroll', sweep, { passive: true });
+  sweep();
+  setTimeout(function(){ blocks.forEach(reveal); }, 6000);
+})();
+</script>
+</body>
+</html>

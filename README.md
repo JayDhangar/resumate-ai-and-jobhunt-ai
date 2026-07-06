@@ -34,7 +34,27 @@ use cases, each with its own agents and its own theme:
 2. **Your Details** — form-based editing for every section (personal, skills, work history, education, projects, certifications, languages, awards) + live Resume Health scores; raw JSON under "Advanced"
 3. **Template** — glass-card gallery with hover **Preview / Use template** actions, full-size sample previews, search / style filter / sort, ⭐ save, and upload-your-own templates
 4. **Customize** — structured styling controls (accent color presets **+ full color picker**, sans/serif, columns, spacing, header style) with a debounced live preview, plus free-form AI content edits
-5. **Preview & Export** — full-page render, in-place text editing with undo/redo, all six export formats, version save & restore
+5. **Preview & Export** — full-page render, in-place text editing with undo/redo, all six export formats, version save & restore, public share link, and the **🌐 Portfolio generator** (below)
+
+## 🌐 Portfolio website generator
+
+One click in Preview & Export turns your resume into an **animated personal portfolio
+website** — a single self-contained HTML file (zero dependencies, no CDN calls) that runs
+offline by double-click and deploys anywhere as one file. Pick a design, pick an accent
+color (full color-picker), preview live, download.
+
+**Five hand-built designs, each a different personality:**
+
+| Design | Signature moves |
+|---|---|
+| 🖥 **Neon Terminal** | Boot-typing intro, phosphor glow, CRT scanlines, and a **real prompt** recruiters can type into: `help`, `neofetch` (ASCII card of you), `theme amber`, `matrix`, `sudo hire-me` — with ↑ history and Tab completion |
+| 🍱 **Bento Studio** | Glass bento grid with 3D-tilt tiles, magnetic buttons, count-up stats, graffiti skill backdrop behind your photo, GitHub-style shipping heatmap, cursor spotlight, and 🎁 **click-to-uncover** project tiles |
+| ✒️ **Kinetic Ink** | Editorial serif with letter-by-letter name assembly, rotating role line, custom morphing cursor, a **pinned sideways-scrolling project strip**, and full-detail lightboxes |
+| 🌌 **Aurora Glass** | Drifting aurora blobs, **rotating galaxy with shooting stars**, cursor glow, a draggable 3D **skill constellation** (spider-web of your skills), self-drawing timeline — and 8 secret skill-stars hidden in the sky (find them all 🏆) |
+| 🧱 **Brutalist Grid** | Hard shadows, slamming clip-path reveals, marquee tickers, wobbling stickers, expanding work rows, and an ⚡ Invert button that flips the whole site |
+
+All designs auto-fill from your resume, respect `prefers-reduced-motion`, sanitize
+inputs, and are covered by tests. Files are saved to `backend/generated/portfolios/`.
 
 ## JobHunt AI 💼
 
@@ -201,6 +221,7 @@ docker compose up --build        # frontend on :5173, API on :8000
 | `POST /api/jobs/company-research` | AI company profile card (size, facts, red flags) — 7-day cache |
 | `GET /api/jobs/salary?title=&location=` | Typical salary range (JSearch/Glassdoor estimate or aggregated) |
 | `POST /api/resumes/{id}/publish` / `…/unpublish` + `GET /r/{slug}` | Public live resume page |
+| `GET /api/portfolio/designs` + `GET /api/resumes/{id}/portfolio/preview\|download` | Portfolio website generator (5 designs) |
 | `GET /api/jobs/sources` | Which job boards are enabled |
 
 Interactive docs: **http://localhost:8000/docs**
@@ -216,7 +237,7 @@ and falls back to SQLite.
 
 ```bash
 cd resume-builder-agent/backend
-.venv\Scripts\python -m pytest tests -q      # 46 tests
+.venv\Scripts\python -m pytest tests -q      # 62 tests
 ```
 
 ## Project layout
