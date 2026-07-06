@@ -98,6 +98,14 @@ class Coordinator:
         self._save(record)
         return record
 
+    def save_tweaks(self, resume_id: str, tweaks: dict) -> ResumeRecord:
+        """Persist the customize-panel state on the record so layout choices
+        (like a 1-page PDF) follow the resume across sessions and browsers."""
+        record = self.get_resume(resume_id)
+        record.ui_tweaks = {str(k): str(v) for k, v in tweaks.items() if v}
+        self._save(record)
+        return record
+
     def edit_resume(self, resume_id: str, instructions: str, save_version: bool = True) -> tuple[ResumeRecord, dict]:
         record = self.get_resume(resume_id)
         template = self._maybe_template(record.selected_template_id)
@@ -181,7 +189,7 @@ class Coordinator:
         self,
         resume_id: str,
         template_id: str = "",
-        template_instructions: str = "",
+        template_instructions: str | None = None,
         resume_instructions: str = "",
         formats: list[str] | None = None,
     ) -> dict:
@@ -189,6 +197,13 @@ class Coordinator:
 
         if resume_instructions.strip():
             record, _ = self.edit_resume(resume_id, resume_instructions, save_version=True)
+
+        # None means "reuse what this resume last generated with", so on-demand
+        # exports (like the download route) keep the user's layout choices
+        if template_instructions is None:
+            template_instructions = record.template_instructions
+        else:
+            record.template_instructions = template_instructions
 
         tid = template_id or record.selected_template_id
         template = self._maybe_template(tid)

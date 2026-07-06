@@ -67,13 +67,17 @@ export default function App() {
     document.documentElement.dataset.product = mode === 'jobs' ? 'jobs' : 'resume'
   }, [mode])
 
-  // tweaks are stored per resume, so one resume's layout choices (like a
-  // 1-page PDF) never leak into another's exports
+  // tweaks are stored per resume (on the record itself, mirrored in
+  // localStorage) so one resume's layout choices (like a 1-page PDF)
+  // never leak into another's exports and survive any browser
   const tweaksLoadedFor = useRef(null)
   useEffect(() => {
     if (!resume?.id) return
     try {
-      const saved = localStorage.getItem(`rb-tweaks:${resume.id}`)
+      const server = resume.ui_tweaks && Object.keys(resume.ui_tweaks).length
+        ? JSON.stringify(resume.ui_tweaks) : null
+      const saved = server
+        ?? localStorage.getItem(`rb-tweaks:${resume.id}`)
         ?? localStorage.getItem('rb-tweaks')  // legacy global key
       setTweaks({ ...EMPTY_TWEAKS, ...JSON.parse(saved || '{}') })
     } catch { setTweaks(EMPTY_TWEAKS) }
@@ -81,9 +85,10 @@ export default function App() {
   }, [resume?.id])
 
   useEffect(() => {
-    if (resume?.id && tweaksLoadedFor.current === resume.id) {
-      localStorage.setItem(`rb-tweaks:${resume.id}`, JSON.stringify(tweaks))
-    }
+    if (!(resume?.id && tweaksLoadedFor.current === resume.id)) return
+    localStorage.setItem(`rb-tweaks:${resume.id}`, JSON.stringify(tweaks))
+    const t = setTimeout(() => { api.saveTweaks(resume.id, tweaks).catch(() => {}) }, 600)
+    return () => clearTimeout(t)
   }, [tweaks, resume?.id])
 
   const notify = useCallback((message, kind = 'info') => {

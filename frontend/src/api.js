@@ -43,6 +43,8 @@ export const api = {
     request(`/resumes/${id}/scores?job_description=${encodeURIComponent(jobDescription)}`),
   generate: (id, payload) =>
     request(`/resumes/${id}/generate`, { method: 'POST', body: JSON.stringify(payload) }),
+  saveTweaks: (id, tweaks) =>
+    request(`/resumes/${id}/tweaks`, { method: 'PUT', body: JSON.stringify(tweaks) }),
   previewUrl: (id, templateId = '', instructions = '') =>
     `${BASE}/resumes/${id}/preview?template_id=${encodeURIComponent(templateId)}&template_instructions=${encodeURIComponent(instructions)}`,
   downloadUrl: (id, fmt) => `${BASE}/resumes/${id}/download/${fmt}`,

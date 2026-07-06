@@ -44,6 +44,12 @@ def update_resume(resume_id: str, payload: UpdateResumeRequest):
     return record.model_dump(mode="json")
 
 
+@router.put("/{resume_id}/tweaks")
+def save_tweaks(resume_id: str, tweaks: dict = Body(...)):
+    """Persist the customize-panel state so layout choices follow the resume."""
+    return get_coordinator().save_tweaks(resume_id, tweaks).model_dump(mode="json")
+
+
 @router.delete("/{resume_id}")
 def delete_resume(resume_id: str):
     deleted = get_coordinator().delete_resume(resume_id)

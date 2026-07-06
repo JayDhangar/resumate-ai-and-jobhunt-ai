@@ -245,6 +245,8 @@ class ResumeRecord(BaseModel):
     original_filename: str = ""
     raw_text: str = ""
     selected_template_id: str = ""
+    template_instructions: str = ""     # last-used layout instructions; exports reuse them
+    ui_tweaks: dict[str, str] = Field(default_factory=dict)  # customize-panel state, follows the resume
     public_slug: str = ""  # when set, resume is live at /r/{slug}
     versions: list[ResumeVersion] = Field(default_factory=list)
     prompt_history: list[PromptHistoryEntry] = Field(default_factory=list)
@@ -282,7 +284,7 @@ class UpdateResumeRequest(BaseModel):
 
 class GenerateRequest(BaseModel):
     template_id: str = ""
-    template_instructions: str = ""
+    template_instructions: str | None = None  # None = reuse the resume's stored instructions
     resume_instructions: str = ""
     formats: list[str] = Field(default_factory=lambda: ["html"])
 

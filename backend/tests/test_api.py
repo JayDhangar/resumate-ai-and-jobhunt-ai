@@ -73,3 +73,23 @@ def test_upload_rejects_bad_extension(client):
 
 def test_unknown_resume_404(client):
     assert client.get("/api/resumes/does-not-exist").status_code == 404
+
+
+def test_tweaks_persist_and_exports_reuse_instructions(client):
+    resume = client.post("/api/resumes", json={"title": "Tweaked"}).json()
+
+    # customize-panel state is saved on the record (empty values dropped)
+    saved = client.put(f"/api/resumes/{resume['id']}/tweaks",
+                       json={"pages": "one", "color": ""}).json()
+    assert saved["ui_tweaks"] == {"pages": "one"}
+
+    # generating with instructions stores them on the record
+    client.post(f"/api/resumes/{resume['id']}/generate",
+                json={"template_instructions": "one page layout", "formats": ["html"]})
+    record = client.get(f"/api/resumes/{resume['id']}").json()
+    assert record["template_instructions"] == "one page layout"
+
+    # a generate call without instructions (like the download route) reuses them
+    from agents.coordinator import get_coordinator
+    result = get_coordinator().generate(resume["id"], formats=["html"])
+    assert result["template"]["layout"]["page_mode"] == "one"
