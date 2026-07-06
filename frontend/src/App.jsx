@@ -186,8 +186,15 @@ export default function App() {
   const download = useCallback(async (fmt) => {
     const result = await generate([fmt])
     if (result?.files?.[fmt]) {
-      window.open(api.downloadUrl(resume.id, fmt), '_blank')
-      notify(`${fmt.toUpperCase()} ready`, 'success')
+      // anchor click instead of window.open: popup blockers kill window.open
+      // calls that happen after an await, silently swallowing the download
+      const link = document.createElement('a')
+      link.href = api.downloadUrl(resume.id, fmt)
+      link.download = ''
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      notify(`${fmt.toUpperCase()} downloading…`, 'success')
     } else if (result) {
       notify(`Could not produce ${fmt.toUpperCase()}: ${result.errors?.[fmt] || 'unknown error'}`, 'error')
     }
