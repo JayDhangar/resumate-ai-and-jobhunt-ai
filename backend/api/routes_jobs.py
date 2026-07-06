@@ -187,6 +187,84 @@ def cover_letter_pdf(payload: CoverLetterPdfRequest):
                         filename=f"{safe.replace(' ', '_')}_Cover_Letter.pdf")
 
 
+class ResearchRequest(BaseModel):
+    job: JobPayload
+
+
+@router.post("/company-research")
+def company_research(payload: ResearchRequest):
+    """AI company profile card — cached per company for 7 days."""
+    import hashlib
+    from datetime import datetime, timedelta, timezone
+
+    from models.schemas import JobPosting
+    from services.apply_service import research_company
+
+    store = get_coordinator().store
+    key = "research-" + hashlib.sha1((payload.job.company or payload.job.title).lower().encode()).hexdigest()[:16]
+    cached = store.get("company_research", key)
+    if cached:
+        try:
+            if datetime.fromisoformat(cached["cached_at"]) > datetime.now(timezone.utc) - timedelta(days=7):
+                return cached["result"]
+        except (KeyError, ValueError):
+            pass
+    result = research_company(JobPosting(**payload.job.model_dump()))
+    store.put("company_research", {"id": key, "cached_at": datetime.now(timezone.utc).isoformat(),
+                                   "result": result})
+    return result
+
+
+@router.get("/salary")
+def salary_insights(title: str, location: str = ""):
+    """Typical salary range for a role — JSearch estimate, else aggregated from live results."""
+    import hashlib
+    import statistics
+    from datetime import datetime, timedelta, timezone
+
+    from services.job_sources import jsearch_salary
+
+    store = get_coordinator().store
+    key = "salary-" + hashlib.sha1(f"{title.lower()}|{location.lower()}".encode()).hexdigest()[:16]
+    cached = store.get("salary_cache", key)
+    if cached:
+        try:
+            if datetime.fromisoformat(cached["cached_at"]) > datetime.now(timezone.utc) - timedelta(days=7):
+                return cached["result"]
+        except (KeyError, ValueError):
+            pass
+
+    result = jsearch_salary(title, location)
+    if result is None:
+        # fallback: aggregate salaries from (cached) live search results
+        import re as _re
+
+        response = get_job_search_agent().search(title, location, limit=80)
+        values: list[float] = []
+        currency = ""
+        for job in response.jobs:
+            digits = [float(x.replace(",", "")) for x in _re.findall(r"\d[\d,]*\.?\d*", job.salary or "")]
+            plausible = [d for d in digits if 10_000 <= d <= 20_000_000]
+            values.extend(plausible)
+            if plausible and not currency:
+                currency = "₹/$ (as listed)"
+        if len(values) >= 3:
+            values.sort()
+            result = {
+                "min": int(values[0]), "max": int(values[-1]),
+                "median": int(statistics.median(values)),
+                "currency": currency, "period": "year",
+                "source": f"aggregated from {len(values)} listed salaries in current results",
+            }
+        else:
+            result = {"min": None, "max": None, "median": None, "currency": "",
+                      "period": "", "source": "insufficient data",
+                      "note": "Few postings disclose salary for this search. Try a broader title."}
+    store.put("salary_cache", {"id": key, "cached_at": datetime.now(timezone.utc).isoformat(),
+                               "result": result})
+    return result
+
+
 @router.post("/send-email")
 def send_application_email(payload: SendEmailRequest):
     from services.email_service import send_email

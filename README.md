@@ -182,6 +182,9 @@ docker compose up --build        # frontend on :5173, API on :8000
 | `POST /api/jobs/analyze-fit` | Fit score vs one job + matched/missing skills + alignment advice |
 | `POST /api/jobs/draft-email` | AI-draft an application email (tones, regenerate) |
 | `POST /api/jobs/send-email` / `GET /api/jobs/email-status` | Send via SMTP (`SMTP_*` in .env) |
+| `POST /api/jobs/company-research` | AI company profile card (size, facts, red flags) — 7-day cache |
+| `GET /api/jobs/salary?title=&location=` | Typical salary range (JSearch/Glassdoor estimate or aggregated) |
+| `POST /api/resumes/{id}/publish` / `…/unpublish` + `GET /r/{slug}` | Public live resume page |
 | `GET /api/jobs/sources` | Which job boards are enabled |
 
 Interactive docs: **http://localhost:8000/docs**

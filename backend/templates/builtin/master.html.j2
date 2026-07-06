@@ -1,22 +1,30 @@
 {#- Master resume template: renders every builtin style from TemplateMeta.
     Table-based two-column layout keeps it compatible with xhtml2pdf. -#}
-{%- set gap = {'compact': '6px', 'normal': '10px', 'relaxed': '16px'}.get(layout.spacing, '10px') -%}
-{%- set item_gap = {'compact': '4px', 'normal': '7px', 'relaxed': '10px'}.get(layout.spacing, '7px') -%}
+{%- set spacing = 'compact' if layout.page_mode == 'one' else ('relaxed' if layout.page_mode == 'two' else layout.spacing) -%}
+{%- set gap = {'compact': '6px', 'normal': '10px', 'relaxed': '16px'}.get(spacing, '10px') -%}
+{%- set item_gap = {'compact': '4px', 'normal': '7px', 'relaxed': '10px'}.get(spacing, '7px') -%}
 {%- set sidebar_bg = colors.sidebar_bg or colors.primary -%}
+{%- set max_bullets = 3 if layout.page_mode == 'one' else 99 -%}
+{%- set has_photo = layout.show_photo and resume.photo -%}
+{%- set pad_v = '0.9cm' if layout.page_mode == 'one' else '1.2cm' -%}
+{%- set pad_h = '1.0cm' if layout.page_mode == 'one' else '1.3cm' -%}
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8"/>
 <title>{{ resume.name or 'Resume' }}</title>
 <style>
-  @page { size: A4; margin: 1.4cm 1.5cm; }
+  @page { size: A4; margin: 0; }
+  html { background: {{ colors.background }}; }
   body {
     font-family: {{ fonts.body }};
     font-size: {{ fonts.base_size_pt }}pt;
     color: {{ colors.text }};
     background: {{ colors.background }};
-    margin: 0; padding: 0;
-    line-height: 1.35;
+    margin: 0;
+    /* spacing lives INSIDE the page so colored backgrounds print full-bleed */
+    padding: {{ '0.9cm 1.0cm' if layout.page_mode == 'one' else '1.2cm 1.3cm' }};
+    line-height: {{ '1.25' if layout.page_mode == 'one' else '1.35' }};
   }
   .page { max-width: 800px; margin: 0 auto; background: {{ colors.background }}; }
   h1.name {
@@ -32,7 +40,8 @@
   .header-left { text-align: left; margin-bottom: {{ gap }}; }
   .header-banner {
     background: {{ colors.primary }}; color: #ffffff;
-    padding: 16px 20px; margin-bottom: {{ gap }};
+    margin: -{{ pad_v }} -{{ pad_h }} {{ gap }};
+    padding: {{ pad_v }} {{ pad_h }} 14px;
   }
   .header-banner h1.name, .header-banner .headline, .header-banner .contact,
   .header-banner .contact a { color: #ffffff; }
@@ -50,6 +59,18 @@
     border-left: 2.5px solid {{ colors.accent }};
     padding-left: 13px; margin-left: 3px; margin-bottom: {{ item_gap }};
   }
+  .photo {
+    width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+    border: 3px solid {{ colors.accent }};
+  }
+  .photo-sidebar { display: block; margin: 0 auto 12px; }
+  table.photo-head { width: 100%; border-collapse: collapse; margin-bottom: {{ gap }}; }
+  table.photo-head td { vertical-align: middle; }
+  td.photo-cell { width: 100px; }
+  {% if layout.page_mode == 'two' %}
+  .item { page-break-inside: avoid; }
+  h2.section { page-break-after: avoid; }
+  {% endif %}
   h2.section {
     font-family: {{ fonts.heading }};
     font-size: {{ fonts.section_size_pt }}pt;
@@ -74,13 +95,15 @@
     color: {{ colors.accent }}; font-size: {{ fonts.base_size_pt - 1 }}pt;
   }
   table.layout { width: 100%; border-collapse: collapse; }
+  /* sidebar layouts: pull the table to the page edges for a full-bleed rail */
+  .sidebar-wrap { margin: {{ '-0.9cm -1.0cm' if layout.page_mode == 'one' else '-1.2cm -1.3cm' }}; }
   td.sidebar {
     width: 30%; background: {{ sidebar_bg }}; color: {{ colors.sidebar_text }};
-    padding: 16px 14px; vertical-align: top;
+    padding: {{ pad_v }} 14px; vertical-align: top;
   }
   td.sidebar h2.section { color: {{ colors.sidebar_text }}; border-color: {{ colors.sidebar_text }}; }
   td.sidebar .contact, td.sidebar .contact a, td.sidebar .skill-line { color: {{ colors.sidebar_text }}; }
-  td.main { padding: 16px 0 16px 20px; vertical-align: top; }
+  td.main { padding: {{ pad_v }} {{ pad_h }} {{ pad_v }} 20px; vertical-align: top; }
   .clear { clear: both; }
 </style>
 </head>
@@ -107,7 +130,18 @@
 {%- endmacro -%}
 
 {%- macro header() -%}
-  {% if layout.header_style == 'split' %}
+  {% if has_photo %}
+    <table class="photo-head">
+      <tr>
+        <td class="photo-cell"><img class="photo" src="{{ resume.photo }}" alt=""/></td>
+        <td>
+          <h1 class="name">{{ name_with_monogram() }}</h1>
+          {% if resume.headline %}<div class="headline">{{ resume.headline }}</div>{% endif %}
+          {{ contact_block() }}
+        </td>
+      </tr>
+    </table>
+  {% elif layout.header_style == 'split' %}
     <table class="split-head">
       <tr>
         <td>
@@ -163,7 +197,7 @@
         <div class="item-title">{{ exp.title }}</div>
         <div class="item-sub">{{ exp.company }}{% if exp.location %} · {{ exp.location }}{% endif %}</div>
         {% if exp.bullets %}
-          <ul class="bullets">{% for b in exp.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+          <ul class="bullets">{% for b in exp.bullets[:max_bullets] %}<li>{{ b }}</li>{% endfor %}</ul>
         {% endif %}
         <div class="clear"></div>
       </div>
@@ -180,7 +214,7 @@
         {% if proj.description %}<div>{{ proj.description }}</div>{% endif %}
         {% if proj.technologies %}<div class="item-sub">{{ proj.technologies|join(', ') }}</div>{% endif %}
         {% if proj.bullets %}
-          <ul class="bullets">{% for b in proj.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+          <ul class="bullets">{% for b in proj.bullets[:max_bullets] %}<li>{{ b }}</li>{% endfor %}</ul>
         {% endif %}
       </div>
     {% endfor %}
@@ -264,10 +298,12 @@
 {%- if layout.sidebar in ('left', 'right') -%}
   {%- set side_keys = ['skills', 'certifications', 'languages', 'awards'] -%}
   {%- set main_keys = section_order | reject('in', side_keys) | list -%}
+  <div class="sidebar-wrap">
   <table class="layout">
     <tr>
     {%- if layout.sidebar == 'left' -%}
       <td class="sidebar">
+        {% if has_photo %}<img class="photo photo-sidebar" src="{{ resume.photo }}" alt=""/>{% endif %}
         {{ contact_block(vertical=True) }}
         {% for key in side_keys %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
       </td>
@@ -285,12 +321,14 @@
         {{ extra_sections() }}
       </td>
       <td class="sidebar">
+        {% if has_photo %}<img class="photo photo-sidebar" src="{{ resume.photo }}" alt=""/>{% endif %}
         {{ contact_block(vertical=True) }}
         {% for key in side_keys %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
       </td>
     {%- endif -%}
     </tr>
   </table>
+  </div>
 {%- else -%}
   {{ header() }}
   {% for key in section_order %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}

@@ -143,6 +143,15 @@ def _catalog() -> list[TemplateMeta]:
              TemplateColors(primary="#1d3557", accent="#3a6ea5", text="#26313d",
                             sidebar_bg="#eef3fa", sidebar_text="#1d3557"),
              popularity=92),
+        meta("Portrait Indigo", "professional", 76,
+             "Light indigo sidebar with a circular profile photo, contact and skills on the "
+             "left — a clean photo-resume for markets where headshots are expected.",
+             ["photo", "sidebar", "two-column"],
+             TemplateLayout(columns=2, header_style="left", sidebar="left",
+                            spacing="normal", show_photo=True),
+             TemplateColors(primary="#33346e", accent="#5a5fbf", text="#2c2c3a",
+                            sidebar_bg="#f0f1fa", sidebar_text="#33346e"),
+             popularity=91),
         # ---- Original catalog ----
         meta("Crisp ATS", "ats", 98,
              "Single-column, zero-frills layout engineered to sail through applicant tracking systems.",

@@ -10,12 +10,37 @@ const FORMATS = [
 
 export default function PreviewStep({
   resume, templateId, templateInstructions,
-  onDownload, onSaveVersion, onHistory, busy,
+  onDownload, onSaveVersion, onHistory, busy, notify,
 }) {
   const frameRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [editable, setEditable] = useState(false)
   const [src, setSrc] = useState('')
+  const [slug, setSlug] = useState(resume.public_slug || '')
+  const [publishing, setPublishing] = useState(false)
+
+  const togglePublish = async () => {
+    setPublishing(true)
+    try {
+      const action = slug ? 'unpublish' : 'publish'
+      const resp = await fetch(`/api/resumes/${resume.id}/${action}`, { method: 'POST' })
+      const body = await resp.json()
+      if (!resp.ok) throw new Error(body.detail || resp.statusText)
+      if (body.published) {
+        setSlug(body.slug)
+        const url = `${window.location.origin}/r/${body.slug}`
+        await navigator.clipboard.writeText(url).catch(() => {})
+        notify(`🔗 Live at ${url} — link copied!`, 'success')
+      } else {
+        setSlug('')
+        notify('Public link disabled', 'success')
+      }
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setPublishing(false)
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -52,6 +77,15 @@ export default function PreviewStep({
         <div className="toolbar-group">
           <button className="btn btn-outline" disabled={busy} onClick={onSaveVersion}>💾 Save version</button>
           <button className="btn btn-ghost" onClick={onHistory}>🕘 History</button>
+          <button className={`btn ${slug ? 'btn-primary' : 'btn-outline'}`} disabled={publishing} onClick={togglePublish}
+            title={slug ? `Live at /r/${slug} — click to unpublish` : 'Host this resume as a public web page'}>
+            {publishing ? '…' : slug ? '🔗 Live — unpublish' : '🔗 Publish link'}
+          </button>
+          {slug && (
+            <a className="btn btn-ghost" href={`/r/${slug}`} target="_blank" rel="noopener noreferrer">
+              /r/{slug} ↗
+            </a>
+          )}
         </div>
       </div>
       {editable && (

@@ -64,6 +64,8 @@ INSTRUCTION_CATEGORIES: list[tuple[str, re.Pattern]] = [
     ("columns", re.compile(r"\bcolumns?\b", re.I)),
     ("header", re.compile(r"\b(centered|banner|header)\b", re.I)),
     ("size", re.compile(r"\b(font size|bigger text|larger text|smaller text)\b", re.I)),
+    ("pages", re.compile(r"\b(one|two|1|2|single)[ -]?pages?\b", re.I)),
+    ("photo", re.compile(r"\bphoto\b|\bpicture\b|\bheadshot\b", re.I)),
 ]
 
 
@@ -210,6 +212,21 @@ class ResumeGeneratorAgent(BaseAgent):
         if re.search(r"\bchips?\b|\bpills?\b|\btags?\b", low) and "skill" in low:
             adjusted.layout.skill_style = "chips"
             handled = True
+        if re.search(r"\b(one|1|single)[ -]?page\b", low):
+            adjusted.layout.page_mode = "one"
+            handled = True
+        if re.search(r"\b(two|2)[ -]?pages?\b", low):
+            adjusted.layout.page_mode = "two"
+            handled = True
+        if re.search(r"\bauto\b.*\bpages?\b|\bpages?\b.*\bauto\b", low):
+            adjusted.layout.page_mode = "auto"
+            handled = True
+        if re.search(r"\b(show|add|with|include)\b.*\b(photo|picture|headshot)\b", low):
+            adjusted.layout.show_photo = True
+            handled = True
+        if re.search(r"\b(hide|remove|no|without)\b.*\b(photo|picture|headshot)\b", low):
+            adjusted.layout.show_photo = False
+            handled = True
         if "serif" in low and "sans" not in low:
             adjusted.fonts.heading = "Georgia, serif"
             adjusted.fonts.body = "Georgia, serif"
@@ -232,6 +249,12 @@ class ResumeGeneratorAgent(BaseAgent):
     # ----------------------------------------------------------- rendering
 
     def render_html(self, resume: ResumeData, template: TemplateMeta) -> str:
+        if template.layout.page_mode == "one":
+            # harder compaction: smaller type so more content fits before shrink-to-fit kicks in
+            template = template.model_copy(deep=True)
+            template.fonts.base_size_pt = max(8.5, template.fonts.base_size_pt - 0.5)
+            template.fonts.name_size_pt = max(16.0, template.fonts.name_size_pt - 4)
+            template.fonts.section_size_pt = max(10.0, template.fonts.section_size_pt - 1)
         template_file = template.html_template or "master.html.j2"
         try:
             jinja_template = self._env.get_template(template_file)

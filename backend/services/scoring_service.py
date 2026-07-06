@@ -160,6 +160,30 @@ def keyword_suggestions(resume: ResumeData, job_description: str = "") -> tuple[
     return missing, suggested
 
 
+def jd_coverage(resume: ResumeData, job_description: str) -> dict:
+    """Keyword coverage of a job description: which JD terms the resume hits."""
+    words = re.findall(r"[A-Za-z][A-Za-z+#./-]{2,}", job_description.lower())
+    stop = {"the", "and", "for", "with", "you", "will", "our", "are", "have", "this",
+            "that", "your", "who", "can", "all", "job", "work", "team", "role", "years",
+            "experience", "skills", "strong", "ability", "including", "required",
+            "preferred", "candidate", "responsibilities", "requirements", "about"}
+    counts = Counter(w for w in words if w not in stop and len(w) > 2)
+    pool = [w for w, c in counts.most_common(30) if c >= 2 or len(w) > 5][:20]
+    resume_text = (
+        " ".join(resume.flat_skills()) + " " + resume.summary + " " + resume.headline + " "
+        + " ".join(b for e in resume.experience for b in e.bullets)
+        + " " + " ".join(f"{p.name} {p.description} {' '.join(p.technologies)}" for p in resume.projects)
+    ).lower()
+    covered = [w for w in pool if re.search(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])", resume_text)]
+    missing = [w for w in pool if w not in covered]
+    return {
+        "total": len(pool),
+        "covered": covered,
+        "missing": missing,
+        "coverage_pct": int(100 * len(covered) / len(pool)) if pool else 0,
+    }
+
+
 def score_resume(resume: ResumeData, job_description: str = "") -> ScoreReport:
     ats, ats_tips = ats_score(resume)
     grammar, grammar_issues = grammar_score(resume)

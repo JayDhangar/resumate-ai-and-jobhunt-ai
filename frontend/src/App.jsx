@@ -19,7 +19,7 @@ export const STEPS = [
   { key: 'preview', label: 'Preview & Export', icon: '👁' },
 ]
 
-const EMPTY_TWEAKS = { color: '', font: '', columns: '', spacing: '', header: '', experience: '', monogram: '', extra: '' }
+const EMPTY_TWEAKS = { color: '', font: '', columns: '', spacing: '', header: '', experience: '', monogram: '', pages: '', photo: '', extra: '' }
 
 export function buildTemplateInstructions(tweaks) {
   const lines = []
@@ -35,6 +35,10 @@ export function buildTemplateInstructions(tweaks) {
   if (tweaks.header === 'split') lines.push('split header')
   if (tweaks.experience === 'timeline') lines.push('timeline experience')
   if (tweaks.monogram === 'on') lines.push('add a monogram badge')
+  if (tweaks.pages === 'one') lines.push('one page layout')
+  if (tweaks.pages === 'two') lines.push('two page layout')
+  if (tweaks.photo === 'show') lines.push('show my photo')
+  if (tweaks.photo === 'hide') lines.push('hide the photo')
   if (tweaks.extra.trim()) lines.push(tweaks.extra.trim())
   return lines.join('\n')
 }
@@ -46,7 +50,11 @@ export default function App() {
   const [resume, setResume] = useState(null)
   const [templates, setTemplates] = useState(null) // null = loading
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
-  const [tweaks, setTweaks] = useState(EMPTY_TWEAKS)
+  const [tweaks, setTweaks] = useState(() => {
+    try {
+      return { ...EMPTY_TWEAKS, ...JSON.parse(localStorage.getItem('rb-tweaks') || '{}') }
+    } catch { return EMPTY_TWEAKS }
+  })
   const [scores, setScores] = useState(null)
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState(null)
@@ -62,6 +70,10 @@ export default function App() {
     localStorage.setItem('rb-mode', mode)
     document.documentElement.dataset.product = mode === 'jobs' ? 'jobs' : 'resume'
   }, [mode])
+
+  useEffect(() => {
+    localStorage.setItem('rb-tweaks', JSON.stringify(tweaks))
+  }, [tweaks])
 
   const notify = useCallback((message, kind = 'info') => {
     setToast({ message, kind, id: Date.now() })
@@ -245,6 +257,7 @@ export default function App() {
             onSaveVersion={() => saveResumeData(resume.data, true, 'Manual save')}
             onHistory={() => setHistoryOpen(true)}
             busy={!!busy}
+            notify={notify}
           />
         )}
         {step > 0 && !resume && (

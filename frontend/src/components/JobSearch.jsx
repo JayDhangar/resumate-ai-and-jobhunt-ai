@@ -332,6 +332,35 @@ function MatchPanel({ onMatch, loading, notify, matchedResume, resumes, selected
 function JobCard({ job, expanded, onToggle, canFit, onFitApply, onSave }) {
   const verdict = VERDICT_META[job.trust?.verdict] || VERDICT_META.unverified
   const platform = platformOf(job)
+  const [research, setResearch] = useState(null)
+  const [salary, setSalary] = useState(null)
+  const [loadingPanel, setLoadingPanel] = useState('')
+
+  const loadResearch = async () => {
+    if (research) { setResearch(null); return }
+    setLoadingPanel('research')
+    try {
+      const resp = await fetch('/api/jobs/company-research', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job: { title: job.title, company: job.company, location: job.location, description: job.description, url: job.url } }),
+      })
+      if (!resp.ok) throw new Error((await resp.json()).detail || resp.statusText)
+      setResearch(await resp.json())
+    } catch { setResearch({ summary: 'Research unavailable right now.', red_flags: [], notable: [] }) }
+    finally { setLoadingPanel('') }
+  }
+
+  const loadSalary = async () => {
+    if (salary) { setSalary(null); return }
+    setLoadingPanel('salary')
+    try {
+      const params = new URLSearchParams({ title: job.title, location: job.location || '' })
+      const resp = await fetch(`/api/jobs/salary?${params}`)
+      if (!resp.ok) throw new Error((await resp.json()).detail || resp.statusText)
+      setSalary(await resp.json())
+    } catch { setSalary({ source: 'unavailable' }) }
+    finally { setLoadingPanel('') }
+  }
   return (
     <article className={`glass job-card ${expanded ? 'job-open' : ''}`}>
       <div className="job-head" onClick={onToggle} role="button" tabIndex={0}>
@@ -385,6 +414,44 @@ function JobCard({ job, expanded, onToggle, canFit, onFitApply, onSave }) {
             <button className="btn btn-primary btn-block fit-cta" onClick={onFitApply}>
               📊 Resume Fit &amp; Apply Email — score my resume against this job
             </button>
+          )}
+          <div className="insight-buttons">
+            <button className="btn btn-outline btn-small" onClick={loadResearch} disabled={loadingPanel === 'research'}>
+              {loadingPanel === 'research' ? 'Researching…' : research ? '🏢 Hide research' : '🏢 Company research'}
+            </button>
+            <button className="btn btn-outline btn-small" onClick={loadSalary} disabled={loadingPanel === 'salary'}>
+              {loadingPanel === 'salary' ? 'Fetching…' : salary ? '💰 Hide salary' : '💰 Salary insights'}
+            </button>
+          </div>
+          {research && (
+            <div className="insight-panel">
+              <p><strong>{job.company || 'Company'}</strong> · {research.industry || 'unknown industry'}
+                {research.estimated_size && research.estimated_size !== 'unknown' && <> · {research.estimated_size}</>}
+                {research.headquarters && research.headquarters !== 'unknown' && <> · HQ: {research.headquarters}</>}</p>
+              <p>{research.summary}</p>
+              {research.notable?.length > 0 && (
+                <ul>{research.notable.map((n, i) => <li key={i}>✦ {n}</li>)}</ul>
+              )}
+              {research.red_flags?.length > 0 && (
+                <ul className="flags">{research.red_flags.map((f, i) => <li key={i}>⚠ {f}</li>)}</ul>
+              )}
+              {research.interview_angle && <p className="muted small">🎯 {research.interview_angle}</p>}
+              <p className="muted small">{research.disclaimer} (confidence: {research.confidence || 'n/a'})</p>
+            </div>
+          )}
+          {salary && (
+            <div className="insight-panel">
+              {salary.median ? (
+                <p>
+                  <strong>Typical {job.title}</strong>{job.location && <> in {job.location.split(',')[0]}</>}:{' '}
+                  <span className="salary">{Number(salary.min).toLocaleString()} – {Number(salary.max).toLocaleString()} {salary.currency}</span>
+                  {' '}(median {Number(salary.median).toLocaleString()}) per {salary.period || 'year'}
+                  <span className="muted small"> · {salary.source}</span>
+                </p>
+              ) : (
+                <p className="muted small">{salary.note || 'No salary data available for this role/location.'}</p>
+              )}
+            </div>
           )}
           {job.trust?.reasons?.length > 0 && (
             <ul className="trust-reasons">

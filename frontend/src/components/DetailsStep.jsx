@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const LIST_SECTIONS = [
   {
@@ -110,6 +110,7 @@ export default function DetailsStep({ resume, scores, onSave, onNext, notify }) 
             <Field label="GitHub" value={data.links?.github || ''} onChange={(v) => patch({ links: { ...data.links, github: v } })} />
             <Field label="Website" value={data.links?.website || ''} onChange={(v) => patch({ links: { ...data.links, website: v } })} />
           </div>
+          <PhotoField photo={data.photo} onChange={(photo) => patch({ photo })} notify={notify} />
           <label className="field-label">Professional summary</label>
           <textarea
             className="input textarea" rows={3}
@@ -175,6 +176,7 @@ export default function DetailsStep({ resume, scores, onSave, onNext, notify }) 
       </div>
 
       <aside className="details-side">
+        <JdCoveragePanel resumeId={resume.id} />
         {scores && (
           <div className="glass panel-pad">
             <h3 className="panel-title">📊 Resume Health</h3>
@@ -197,6 +199,107 @@ export default function DetailsStep({ resume, scores, onSave, onNext, notify }) 
           </button>
         </div>
       </aside>
+    </div>
+  )
+}
+
+function PhotoField({ photo, onChange, notify }) {
+  const fileRef = useRef(null)
+
+  const handleFile = (files) => {
+    const file = files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const size = 320
+        const canvas = document.createElement('canvas')
+        const scale = Math.max(size / img.width, size / img.height)
+        canvas.width = Math.min(img.width * scale, size)
+        canvas.height = Math.min(img.height * scale, size)
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        onChange(canvas.toDataURL('image/jpeg', 0.85))
+        notify('Photo added — enable “Show photo” in Customize to render it', 'success')
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div className="photo-field">
+      <label className="field-label">Profile photo (optional — for photo templates)</label>
+      <div className="photo-row">
+        {photo
+          ? <img src={photo} alt="profile" className="photo-thumb" />
+          : <div className="photo-thumb photo-empty">🙂</div>}
+        <button className="btn btn-outline btn-small" onClick={() => fileRef.current?.click()}>
+          {photo ? 'Change photo' : '⇪ Upload photo'}
+        </button>
+        {photo && (
+          <button className="btn btn-ghost btn-small" onClick={() => onChange('')}>✕ Remove</button>
+        )}
+        <input ref={fileRef} type="file" hidden accept="image/*" onChange={(e) => handleFile(e.target.files)} />
+      </div>
+    </div>
+  )
+}
+
+function JdCoveragePanel({ resumeId }) {
+  const [jd, setJd] = useState('')
+  const [coverage, setCoverage] = useState(null)
+  const [checking, setChecking] = useState(false)
+
+  useEffect(() => {
+    if (!jd.trim() || jd.trim().length < 60) { setCoverage(null); return }
+    const timer = setTimeout(async () => {
+      setChecking(true)
+      try {
+        const resp = await fetch(`/api/resumes/${resumeId}/optimize`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_description: jd }),
+        })
+        const body = await resp.json()
+        setCoverage(body.jd_coverage || null)
+      } catch { setCoverage(null) }
+      finally { setChecking(false) }
+    }, 700)
+    return () => clearTimeout(timer)
+  }, [jd, resumeId])
+
+  const pct = coverage?.coverage_pct ?? 0
+  const hue = Math.round((pct / 100) * 120)
+  return (
+    <div className="glass panel-pad">
+      <h3 className="panel-title">🎯 Job match check</h3>
+      <textarea
+        className="input textarea" rows={4}
+        placeholder="Paste a job description here — see live how many of its keywords your resume covers"
+        value={jd} onChange={(e) => setJd(e.target.value)}
+      />
+      {checking && <p className="muted small">Checking…</p>}
+      {coverage && !checking && (
+        <>
+          <div className="meter">
+            <span className="meter-label">Coverage</span>
+            <div className="meter-track">
+              <div className="meter-fill" style={{ width: `${pct}%`, background: `hsl(${hue} 65% 45%)` }} />
+            </div>
+            <span className="meter-value">{coverage.covered.length}/{coverage.total}</span>
+          </div>
+          {coverage.covered.length > 0 && (
+            <div className="chips">{coverage.covered.map((w) => <span key={w} className="skill-hit">{w}</span>)}</div>
+          )}
+          {coverage.missing.length > 0 && (
+            <>
+              <p className="muted small" style={{ margin: '8px 0 2px' }}>Missing from your resume:</p>
+              <div className="chips">{coverage.missing.map((w) => <span key={w} className="skill-miss">{w}</span>)}</div>
+            </>
+          )}
+        </>
+      )}
     </div>
   )
 }

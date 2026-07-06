@@ -39,6 +39,12 @@ def generate_svg_preview(meta: TemplateMeta, dest: Path) -> Path:
         sb_text = (colors.sidebar_text or "#ffffff") + "88"
         parts.append(_bar(sidebar_x, 0, sidebar_w, PREVIEW_H, sb_color, 0))
         sy = 30
+        if layout.show_photo:
+            parts.append(
+                f'<circle cx="{sidebar_x + sidebar_w / 2}" cy="52" r="26" '
+                f'fill="{colors.accent}" opacity="0.85"/>'
+            )
+            sy = 96
         for _ in range(6):
             parts.append(_bar(sidebar_x + 14, sy, sidebar_w - 28, 7, sb_text))
             sy += 18

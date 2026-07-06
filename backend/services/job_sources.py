@@ -352,6 +352,45 @@ class JoobleSource(JobSource):
         ]
 
 
+def jsearch_salary(job_title: str, location: str) -> dict | None:
+    """Estimated salary range from JSearch (counts against the monthly budget)."""
+    settings = get_settings()
+    if not settings.rapidapi_key or not _jsearch_consume():
+        return None
+    headers = {
+        "X-RapidAPI-Key": settings.rapidapi_key,
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+    }
+    for path in ("/estimated-salary", "/job-salary", "/estimated-salary-v2"):
+        try:
+            resp = httpx.get(
+                f"https://jsearch.p.rapidapi.com{path}",
+                params={"job_title": job_title, "location": location or "India",
+                        "location_type": "ANY"},
+                headers=headers, timeout=20,
+            )
+            if resp.status_code == 404:
+                continue
+            resp.raise_for_status()
+            data = resp.json().get("data")
+            items = data.get("salaries", data) if isinstance(data, dict) else data
+            if not items:
+                return None
+            item = items[0]
+            return {
+                "min": item.get("min_salary") or item.get("min_base_salary"),
+                "max": item.get("max_salary") or item.get("max_base_salary"),
+                "median": item.get("median_salary") or item.get("median_base_salary"),
+                "currency": item.get("salary_currency") or "",
+                "period": (item.get("salary_period") or "YEAR").lower(),
+                "source": f"jsearch ({item.get('publisher_name', 'estimate')})",
+            }
+        except httpx.HTTPError as exc:
+            logger.warning("jsearch salary %s failed: %s", path, exc)
+            return None
+    return None
+
+
 def all_sources() -> list[JobSource]:
     return [
         RemotiveSource(), ArbeitnowSource(), RemoteOKSource(), TheMuseSource(),

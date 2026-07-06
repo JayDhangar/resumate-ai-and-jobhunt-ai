@@ -28,28 +28,46 @@ class ExportAgent(BaseAgent):
 
     # -------------------------------------------------------------- formats
 
-    def to_pdf(self, html: str, dest: Path) -> Path:
+    def to_pdf(self, html: str, dest: Path, fit_one_page: bool = False) -> Path:
         """Prefer Chromium print-to-PDF (pixel-perfect, matches the browser
         preview exactly); fall back to xhtml2pdf when Playwright is unavailable."""
         try:
-            return self._to_pdf_chromium(html, dest)
+            return self._to_pdf_chromium(html, dest, fit_one_page)
         except Exception as exc:  # noqa: BLE001
             self.logger.warning("Chromium PDF failed (%s); falling back to xhtml2pdf", exc)
         return self._to_pdf_xhtml2pdf(html, dest)
 
-    def _to_pdf_chromium(self, html: str, dest: Path) -> Path:
+    def _to_pdf_chromium(self, html: str, dest: Path, fit_one_page: bool = False) -> Path:
         from playwright.sync_api import sync_playwright
 
+        # Full-bleed printing: page spacing lives INSIDE the document (body padding),
+        # so colored template backgrounds cover the entire page with no white frame.
+        a4_width_px = 21.0 / 2.54 * 96    # ≈ 794
+        a4_height_px = 29.7 / 2.54 * 96   # ≈ 1122
         with sync_playwright() as p:
             browser = p.chromium.launch()
             try:
                 page = browser.new_page()
+                page.set_viewport_size({"width": int(a4_width_px), "height": 1100})
                 page.set_content(html, wait_until="load")
+                scale = 1.0
+                if fit_one_page:
+                    # pdf(scale=s) lays content out at width/s, THEN shrinks by s —
+                    # re-measure at the scaled layout width until it fits (3% safety)
+                    for _ in range(4):
+                        page.set_viewport_size({"width": int(a4_width_px / scale), "height": 1100})
+                        content_height = page.evaluate("document.body.scrollHeight")
+                        if content_height * scale <= a4_height_px * 0.99:
+                            break
+                        scale = max(0.6, round((a4_height_px * 0.97) / content_height, 3))
+                    if scale < 1.0:
+                        self.logger.info("1-page fit: scaling PDF to %.0f%%", scale * 100)
                 page.pdf(
                     path=str(dest),
                     format="A4",
                     print_background=True,
-                    margin={"top": "1.2cm", "bottom": "1.2cm", "left": "1.3cm", "right": "1.3cm"},
+                    scale=scale,
+                    margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
                 )
             finally:
                 browser.close()
@@ -266,13 +284,17 @@ class ExportAgent(BaseAgent):
                     path.write_text(html, encoding="utf-8")
                     produced["html"] = str(path)
                 elif fmt == "pdf":
-                    produced["pdf"] = str(self.to_pdf(html, out_dir / f"{output_name}.pdf"))
+                    produced["pdf"] = str(self.to_pdf(
+                        html, out_dir / f"{output_name}.pdf",
+                        fit_one_page=template.layout.page_mode == "one",
+                    ))
                 elif fmt == "docx":
                     produced["docx"] = str(self.to_docx(resume, template, out_dir / f"{output_name}.docx"))
                 elif fmt == "png":
                     pdf_path = Path(produced.get("pdf", ""))
                     if not pdf_path.is_file():
-                        pdf_path = self.to_pdf(html, out_dir / f"{output_name}.pdf")
+                        pdf_path = self.to_pdf(html, out_dir / f"{output_name}.pdf",
+                                               fit_one_page=template.layout.page_mode == "one")
                         produced["pdf"] = str(pdf_path)
                     produced["png"] = str(self.to_png(pdf_path, out_dir / f"{output_name}.png"))
                 elif fmt in ("md", "markdown"):

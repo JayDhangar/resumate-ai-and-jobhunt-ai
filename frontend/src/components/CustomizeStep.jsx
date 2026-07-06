@@ -68,11 +68,26 @@ export default function CustomizeStep({
           <Segmented value={tweaks.header} onPick={(v) => set('header', v)}
             options={[{ v: 'centered', label: 'Centered' }, { v: 'banner', label: 'Banner' }, { v: 'split', label: 'Split' }]} />
 
+          <label className="field-label">Pages</label>
+          <Segmented value={tweaks.pages} onPick={(v) => set('pages', v)}
+            options={[{ v: 'one', label: '📄 1-page (compact)' }, { v: 'two', label: '📑 2-page (spacious)' }]} />
+
+          <label className="field-label">Photo</label>
+          <Segmented value={tweaks.photo} onPick={(v) => set('photo', v)}
+            options={[{ v: 'show', label: '🙂 Show photo' }, { v: 'hide', label: 'Hide photo' }]} />
+          <p className="muted small">Upload your photo in “Your Details” → Personal — templates render it when shown.</p>
+
           <label className="field-label">Extras</label>
-          <Segmented value={tweaks.experience} onPick={(v) => set('experience', v)}
-            options={[{ v: 'timeline', label: '⋮ Timeline experience' }]} />
-          <Segmented value={tweaks.monogram} onPick={(v) => set('monogram', v)}
-            options={[{ v: 'on', label: 'Ⓙ Monogram badge' }]} />
+          <div className="extras-row">
+            <button
+              className={`seg-toggle ${tweaks.experience === 'timeline' ? 'seg-active' : ''}`}
+              onClick={() => set('experience', 'timeline')}
+            >⋮ Timeline experience</button>
+            <button
+              className={`seg-toggle ${tweaks.monogram === 'on' ? 'seg-active' : ''}`}
+              onClick={() => set('monogram', 'on')}
+            >Ⓜ Monogram badge</button>
+          </div>
 
           <label className="field-label">Anything else (free text)</label>
           <input

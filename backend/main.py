@@ -100,6 +100,27 @@ async def domain_error_handler(_: Request, exc: ResumeBuilderError) -> JSONRespo
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 
+@app.get("/r/{slug}")
+def public_resume(slug: str):
+    """Public resume page — live-rendered with the owner's selected template."""
+    from fastapi.responses import HTMLResponse
+
+    from agents.coordinator import get_coordinator
+    from core.exceptions import NotFoundError
+
+    coordinator = get_coordinator()
+    record = next((r for r in coordinator.list_resumes() if r.public_slug == slug), None)
+    if record is None:
+        raise NotFoundError("This resume is not published (or the link was disabled).")
+    template = coordinator._maybe_template(record.selected_template_id) or coordinator.list_templates()[0]
+    html = coordinator.generator.render_html(record.data, template)
+    footer = (
+        '<div style="text-align:center;padding:14px;font-family:sans-serif;font-size:11px;color:#888">'
+        'Live resume · built with <strong>ResuMate AI</strong></div>'
+    )
+    return HTMLResponse(html.replace("</body>", footer + "</body>"))
+
+
 @app.get("/api/usage")
 def usage():
     """Cumulative LLM token usage and estimated cost, grouped by operation."""

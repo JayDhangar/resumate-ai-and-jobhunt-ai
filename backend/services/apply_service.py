@@ -214,13 +214,67 @@ def cover_letter_html(title: str, body: str, name: str) -> str:
     )
     return (
         "<!DOCTYPE html><html><head><meta charset='utf-8'/><style>"
-        "@page { size: A4; margin: 2.2cm 2.4cm; }"
-        "body { font-family: Georgia, serif; font-size: 11.5pt; color: #222; line-height: 1.55; }"
+        "@page { size: A4; margin: 0; }"
+        "body { font-family: Georgia, serif; font-size: 11.5pt; color: #222; line-height: 1.55; "
+        "margin: 0; padding: 2.2cm 2.4cm; }"
         "h1 { font-size: 15pt; color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 6px; }"
         "p { margin: 0 0 12px; }"
         "</style></head><body>"
         f"<h1>{html_mod.escape(name)}</h1>{paragraphs}</body></html>"
     )
+
+
+COMPANY_RESEARCH_PROMPT = """You are a company research analyst helping a job seeker. Using the job posting below and your general knowledge, return JSON:
+{
+  "summary": "2-3 sentence overview of what the company does",
+  "industry": "...",
+  "estimated_size": "e.g. 'startup (~50)', 'mid-size (500-5000)', 'enterprise (10k+)', or 'unknown'",
+  "headquarters": "...or 'unknown'",
+  "founded": "...or 'unknown'",
+  "notable": ["2-4 notable facts: products, funding, clients, awards"],
+  "red_flags": ["anything concerning in the posting or company reputation; [] if none"],
+  "interview_angle": "1-2 sentences: what this company likely values, to mention in an interview",
+  "confidence": "high | medium | low — how confident you are this is the right company"
+}
+Be honest: if the company is obscure or ambiguous, say so with confidence "low" and rely on the posting text. Never invent specifics. Return ONLY JSON."""
+
+
+def research_company(job: JobPosting) -> dict[str, Any]:
+    """Company research card: AI summary + heuristic red flags, cached by caller."""
+    from services.trust_service import score_job
+
+    trust = score_job(job)
+    heuristic_flags = [r.lstrip("⚠✗• ") for r in trust.reasons if r.startswith(("⚠", "✗"))]
+
+    llm = get_llm()
+    if llm.available:
+        try:
+            payload = llm.complete_json(
+                COMPANY_RESEARCH_PROMPT,
+                f"COMPANY: {job.company}\nJOB POSTING:\n{_job_context(job)}",
+                max_tokens=1200,
+                op="company_research",
+            )
+            flags = list(dict.fromkeys((payload.get("red_flags") or []) + heuristic_flags))
+            payload["red_flags"] = flags[:6]
+            payload["trust_score"] = trust.score
+            payload["source"] = "ai"
+            payload["disclaimer"] = ("AI-generated from the posting and general knowledge — "
+                                     "verify key facts before an interview.")
+            return payload
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Company research LLM failed (%s); using heuristics", exc)
+    return {
+        "summary": f"{job.company or 'This company'} is hiring for '{job.title}'. "
+                   "No AI provider available for a deeper profile — review the posting and "
+                   "the company's website/LinkedIn page.",
+        "industry": "unknown", "estimated_size": "unknown", "headquarters": "unknown",
+        "founded": "unknown", "notable": [],
+        "red_flags": heuristic_flags[:6],
+        "interview_angle": "Mirror the responsibilities and keywords from the posting.",
+        "confidence": "low", "trust_score": trust.score, "source": "heuristic",
+        "disclaimer": "Heuristic analysis only.",
+    }
 
 
 def _template_email(resume: ResumeData, job: JobPosting, tone: str) -> dict[str, Any]:

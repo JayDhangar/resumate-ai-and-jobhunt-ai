@@ -107,6 +107,7 @@ class ResumeData(BaseModel):
     phone: str = ""
     location: str = ""
     summary: str = ""
+    photo: str = ""  # data URL (base64) of the profile photo, optional
     links: ContactLinks = Field(default_factory=ContactLinks)
     skills: list[SkillGroup] = Field(default_factory=list)
     experience: list[ExperienceItem] = Field(default_factory=list)
@@ -153,6 +154,8 @@ class TemplateLayout(BaseModel):
     skill_style: str = "lines"      # lines | chips
     experience_style: str = "plain" # plain | timeline
     monogram: bool = False          # initial badge next to the name
+    show_photo: bool = False        # render resume.photo when present
+    page_mode: str = "auto"         # auto | one (compact 1-page) | two (spacious 2-page)
 
 
 class TemplateColors(BaseModel):
@@ -242,6 +245,7 @@ class ResumeRecord(BaseModel):
     original_filename: str = ""
     raw_text: str = ""
     selected_template_id: str = ""
+    public_slug: str = ""  # when set, resume is live at /r/{slug}
     versions: list[ResumeVersion] = Field(default_factory=list)
     prompt_history: list[PromptHistoryEntry] = Field(default_factory=list)
     generated_files: dict[str, str] = Field(default_factory=dict)
