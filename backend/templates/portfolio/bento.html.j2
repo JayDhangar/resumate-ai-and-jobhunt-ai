@@ -147,9 +147,19 @@
   .heat { grid-column: span 2; }
   .heatgrid { display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px; margin-top: 12px; }
   .heatgrid i { aspect-ratio: 1; border-radius: 2.5px; background: var(--acc); display: block;
-                transition: opacity .3s, transform .15s; }
-  .heatgrid i:hover { transform: scale(1.6); opacity: 1 !important; }
+                transition: opacity .25s, transform .15s, box-shadow .15s; cursor: pointer; position: relative; }
+  .heatgrid i:hover { transform: scale(1.9); opacity: 1 !important; z-index: 5;
+                      box-shadow: 0 0 12px rgba(var(--rgb), .85); }
   .heat small { color: var(--muted); display: block; margin-top: 10px; font-size: 12px; }
+  #heattip { position: fixed; z-index: 90; pointer-events: none; white-space: nowrap;
+             background: rgba(16,16,24,.94); border: 1px solid rgba(var(--rgb), .5); color: #f2f2fa;
+             font-size: 12px; padding: 5px 11px; border-radius: 8px; backdrop-filter: blur(8px);
+             transform: translate(-50%, -135%); opacity: 0; transition: opacity .15s; }
+  #heattip.on { opacity: 1; }
+  .shipfx { position: fixed; z-index: 90; pointer-events: none; font-size: 15px;
+            animation: shipup .9s ease-out forwards; }
+  @keyframes shipup { from { opacity: 1; transform: translate(-50%, 0) rotate(-40deg); }
+                      to { opacity: 0; transform: translate(-50%, -52px) rotate(-40deg); } }
 
   .toggle { position: fixed; top: 18px; right: 18px; z-index: 60; cursor: pointer;
             background: var(--glass); border: 1px solid var(--border); color: var(--text);
@@ -245,7 +255,7 @@
   <div class="tile heat">
     <h2>Shipping activity</h2>
     <div class="heatgrid">
-      {% for i in range(130) %}<i style="opacity: {{ [0.07, 0.16, 0.32, 0.58, 0.9][(i * 37 + (i * i) // 3) % 23 % 5] }}"></i>{% endfor %}
+      {% for i in range(130) %}{% set lvl = (i * 37 + (i * i) // 3) % 23 % 5 %}<i data-l="{{ lvl }}" style="opacity: {{ [0.07, 0.16, 0.32, 0.58, 0.9][lvl] }}"></i>{% endfor %}
     </div>
     <small>always building — {{ n_projects }} shipped projects and counting</small>
   </div>
@@ -342,6 +352,37 @@
       c.classList.add('off');
     });
   });
+
+  // shipping heatmap: hover tooltip + click-to-launch
+  var heat = document.querySelector('.heatgrid');
+  if (heat) {
+    var tip = document.createElement('div'); tip.id = 'heattip'; document.body.appendChild(tip);
+    var MOODS = ['quiet day', 'warming up', 'in the zone', 'shipping spree', 'on fire 🔥'];
+    var SHIPS = [0, 1, 2, 4, 6];
+    var launched = 0, note = document.querySelector('.heat small'), note0 = note ? note.textContent : '';
+    heat.addEventListener('mouseover', function(e){
+      if (e.target.tagName !== 'I') return;
+      var l = +e.target.dataset.l || 0, rc = e.target.getBoundingClientRect();
+      tip.textContent = (SHIPS[l] ? SHIPS[l] + ' commit' + (SHIPS[l] > 1 ? 's' : '') + ' — ' : '') + MOODS[l];
+      tip.style.left = rc.left + rc.width / 2 + 'px';
+      tip.style.top = rc.top + 'px';
+      tip.classList.add('on');
+    });
+    heat.addEventListener('mouseout', function(){ tip.classList.remove('on'); });
+    heat.addEventListener('click', function(e){
+      if (e.target.tagName !== 'I') return;
+      var rc = e.target.getBoundingClientRect();
+      e.target.style.opacity = 1;
+      if (!reduced) {
+        var fx = document.createElement('span'); fx.className = 'shipfx'; fx.textContent = '🚀';
+        fx.style.left = rc.left + rc.width / 2 + 'px'; fx.style.top = rc.top + 'px';
+        document.body.appendChild(fx);
+        setTimeout(function(){ fx.remove(); }, 950);
+      }
+      launched++;
+      if (note) note.textContent = note0 + ' · 🚀 × ' + launched;
+    });
+  }
 
   // cursor spotlight
   if (!reduced) addEventListener('mousemove', function(e){

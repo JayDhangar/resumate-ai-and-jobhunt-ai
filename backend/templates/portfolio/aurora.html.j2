@@ -75,15 +75,21 @@
   .ev .dt { color: var(--muted); font-size: 12.5px; letter-spacing: 1px; }
   .ev ul { color: #cdd4e8; font-size: 14.5px; padding-left: 18px; margin-top: 8px; line-height: 1.6; }
 
-  .projs { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
+  .projs { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 18px; align-items: start; }
   .pc { transition: transform .25s, box-shadow .25s, border-color .25s; }
   .pc:hover { transform: translateY(-7px); border-color: rgba(var(--rgb), .5);
               box-shadow: 0 18px 44px rgba(var(--rgb), .2); }
   .pc h3 { font-size: 19px; margin-bottom: 8px; }
   .pc p { color: var(--muted); font-size: 14.5px; line-height: 1.6; }
+  .pc ul { margin: 10px 0 0 18px; color: #cdd4e8; font-size: 13.5px; line-height: 1.65; }
+  .pc ul li { margin-bottom: 5px; }
+  .pc ul li::marker { color: var(--acc2); }
   .pc .tags { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
   .pc .tag { font-size: 12px; padding: 3px 10px; border-radius: 16px;
              background: rgba(var(--rgb), .16); color: var(--acc2); }
+  .pc .plink { display: inline-block; margin-top: 13px; font-size: 13px; color: var(--acc2);
+               text-decoration: none; border-bottom: 1px dashed rgba(var(--rgb), .55); }
+  .pc .plink:hover { color: var(--text); border-bottom-style: solid; }
 
   .end { text-align: center; padding-bottom: 14vh; }
   .end h2 { text-transform: none; letter-spacing: -1px; font-size: clamp(30px, 5vw, 52px); color: var(--text); }
@@ -152,8 +158,10 @@
       {% for p in r.projects %}
       <div class="glass pc fade">
         <h3>{{ p.name }}</h3>
-        <p>{{ p.description }}{% if p.bullets %} {{ p.bullets[0] }}{% endif %}</p>
+        <p>{{ p.description }}</p>
+        {% if p.bullets %}<ul>{% for b in p.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
         <div class="tags">{% for t in p.technologies %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+        {% if p.link %}<a class="plink" href="{{ p.link if p.link.startswith('http') else 'https://' + p.link }}" target="_blank">view project ↗</a>{% endif %}
       </div>
       {% endfor %}
     </div>
