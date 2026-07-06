@@ -103,6 +103,15 @@
 
   /* magnetic headline letters + ink splats that stamp a skill */
   .ch { display: inline-block; will-change: transform; }
+
+  /* skill cloud: every word dodges the cursor like the headline */
+  .skcloud { display: flex; flex-wrap: wrap; gap: 20px 38px; align-items: baseline; max-width: 950px; }
+  .skw { display: inline-block; will-change: transform; font-weight: 500; letter-spacing: -.5px; }
+  .skw.s1 { font-size: clamp(26px, 3.2vw, 44px); }
+  .skw.s2 { font-size: clamp(20px, 2.3vw, 30px); color: var(--muted); }
+  .skw.s3 { font-size: clamp(17px, 1.9vw, 24px); color: var(--acc); font-style: italic; }
+  .skhint { margin-top: 30px; font: 600 12px 'Segoe UI', sans-serif; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--muted); }
   .splat { position: fixed; z-index: 60; pointer-events: none;
            background: var(--acc); color: #fff; font-style: italic; font-size: 15px;
            padding: 16px 26px; white-space: nowrap;
@@ -139,12 +148,20 @@
   <div class="scroll-hint">SCROLL ↓</div>
 </header>
 
-{% if r.summary or flat_skills %}
+{% if r.summary %}
 <section class="about">
   <div class="idx">01 / ABOUT</div>
-  {% if r.summary %}<div class="rev"><p>{{ r.summary }}</p></div>{% endif %}
-  {% if flat_skills %}<div class="rev" style="margin-top:34px"><p style="font-size:16px;font-family:'Segoe UI',sans-serif;color:var(--muted);max-width:60ch">
-    {{ flat_skills | join(' · ') }}</p></div>{% endif %}
+  <div class="rev"><p>{{ r.summary }}</p></div>
+</section>
+{% endif %}
+
+{% if flat_skills %}
+<section>
+  <div class="idx">02 / SKILLS</div>
+  <div class="skcloud">
+    {% for s in flat_skills %}<span class="skw s{{ loop.index0 % 3 + 1 }}">{{ s }}</span>{% endfor %}
+  </div>
+  <p class="skhint">the words are shy. chase one with your cursor.</p>
 </section>
 {% endif %}
 
@@ -170,7 +187,7 @@
 
 {% if r.experience or r.education %}
 <section>
-  <div class="idx">02 / EXPERIENCE</div>
+  <div class="idx">03 / EXPERIENCE</div>
   {% for e in r.experience %}
   <div class="xp-row">
     <h3>{{ e.title }} <span class="co">@ {{ e.company }}</span></h3>
@@ -274,7 +291,7 @@ document.addEventListener('keydown', function(e){
     strip.style.transform = 'translateX(' + (-p * dist) + 'px)';
   }, { passive: true });
 
-  // magnetic headline: the big letters dodge the cursor and spring back
+  // magnetic type: headline letters and skill words dodge the cursor, then spring back
   if (!reduced && matchMedia('(pointer: fine)').matches) setTimeout(function(){
     var chars = [];
     document.querySelectorAll('#name .w').forEach(function(w){
@@ -284,6 +301,9 @@ document.addEventListener('keydown', function(e){
         w.appendChild(s); chars.push({ el: s, dx: 0, dy: 0 });
       });
     });
+    document.querySelectorAll('.skw').forEach(function(el){
+      chars.push({ el: el, dx: 0, dy: 0 });
+    });
     var mx = -1e4, my = -1e4;
     addEventListener('mousemove', function(e){ mx = e.clientX; my = e.clientY; }, { passive: true });
     (function spring(){
@@ -292,9 +312,10 @@ document.addEventListener('keydown', function(e){
         // rest position: subtract the current offset so the force uses the letter's home spot
         var cx = rc.left + rc.width / 2 - c.dx, cy = rc.top + rc.height / 2 - c.dy;
         var dx = cx - mx, dy = cy - my, d2 = dx * dx + dy * dy, R = 130, tx = 0, ty = 0;
-        if (d2 < R * R && d2 > 1) {
+        if (d2 < R * R) {
           var d = Math.sqrt(d2), f = (R - d) / R * 36;
-          tx = dx / d * f; ty = dy / d * f;
+          if (d > 1) { tx = dx / d * f; ty = dy / d * f; }
+          else { ty = -f; }  // direct hit: push straight up
         }
         c.dx += (tx - c.dx) * .16; c.dy += (ty - c.dy) * .16;
         c.el.style.transform = 'translate(' + c.dx + 'px,' + c.dy + 'px)';
