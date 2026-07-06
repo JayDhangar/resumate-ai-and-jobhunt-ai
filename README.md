@@ -1,5 +1,11 @@
 # ResuMate AI 📄 + JobHunt AI 💼
 
+[![CI](https://github.com/JayDhangar/resumate-ai-and-jobhunt-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/JayDhangar/resumate-ai-and-jobhunt-ai/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-pluggable-47A248?logo=mongodb&logoColor=white)
+
 Two AI products in one app, switched with the header toggle — shared backend, separate
 use cases, each with its own agents and its own theme:
 
@@ -11,6 +17,16 @@ use cases, each with its own agents and its own theme:
   apply links.* A job-search aggregator that fans out across multiple boards in
   parallel, dedupes, ranks by relevance, scores every posting's genuineness, RAG-matches
   jobs to your resume, and drafts + sends application emails per job.
+
+## Screenshots
+
+| ResuMate AI — start | JobHunt AI — live search |
+|---|---|
+| ![ResuMate start](docs/screenshots/resumate-start.png) | ![JobHunt search](docs/screenshots/jobhunt-search.png) |
+
+| Template gallery | Generated resume (sample data) |
+|---|---|
+| ![Template gallery](docs/screenshots/template-gallery.png) | ![Template render](docs/screenshots/template-render.png) |
 
 ## The 5-step builder
 
