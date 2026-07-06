@@ -143,23 +143,23 @@
           background: radial-gradient(440px at var(--mx, 50%) var(--my, 30%),
                       rgba(var(--rgb), .09), transparent 70%); }
 
-  /* ---- shipping heatmap ---- */
-  .heat { grid-column: span 2; }
-  .heatgrid { display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px; margin-top: 12px; }
-  .heatgrid i { aspect-ratio: 1; border-radius: 2.5px; background: var(--acc); display: block;
-                transition: opacity .25s, transform .15s, box-shadow .15s; cursor: pointer; position: relative; }
-  .heatgrid i:hover { transform: scale(1.9); opacity: 1 !important; z-index: 5;
-                      box-shadow: 0 0 12px rgba(var(--rgb), .85); }
-  .heat small { color: var(--muted); display: block; margin-top: 10px; font-size: 12px; }
-  #heattip { position: fixed; z-index: 90; pointer-events: none; white-space: nowrap;
-             background: rgba(16,16,24,.94); border: 1px solid rgba(var(--rgb), .5); color: #f2f2fa;
-             font-size: 12px; padding: 5px 11px; border-radius: 8px; backdrop-filter: blur(8px);
-             transform: translate(-50%, -135%); opacity: 0; transition: opacity .15s; }
-  #heattip.on { opacity: 1; }
-  .shipfx { position: fixed; z-index: 90; pointer-events: none; font-size: 15px;
-            animation: shipup .9s ease-out forwards; }
-  @keyframes shipup { from { opacity: 1; transform: translate(-50%, 0) rotate(-40deg); }
-                      to { opacity: 0; transform: translate(-50%, -52px) rotate(-40deg); } }
+  /* ---- zero-gravity toolbox: draggable skill magnets ---- */
+  .toybox { grid-column: span 2; }
+  .toybox .box { position: relative; height: 300px; margin-top: 12px; border-radius: 14px;
+                 background: rgba(var(--rgb), .05); border: 1px dashed rgba(var(--rgb), .28);
+                 overflow: hidden; }
+  .mag { position: absolute; left: 0; top: 0; padding: 8px 16px; border-radius: 22px;
+         font-size: 13.5px; font-weight: 600; white-space: nowrap;
+         background: rgba(var(--rgb), .14); border: 1px solid rgba(var(--rgb), .42); color: var(--text);
+         cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
+         box-shadow: 0 4px 14px rgba(0,0,0,.22); will-change: transform; }
+  .mag:active { cursor: grabbing; }
+  .mag.held { background: var(--acc); color: #fff; z-index: 6;
+              box-shadow: 0 10px 26px rgba(var(--rgb), .55); }
+  .toybox .box.static { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px;
+                        height: auto; align-content: flex-start; }
+  .toybox .box.static .mag { position: static; transform: none !important; }
+  .toybox small { color: var(--muted); display: block; margin-top: 10px; font-size: 12px; }
 
   .toggle { position: fixed; top: 18px; right: 18px; z-index: 60; cursor: pointer;
             background: var(--glass); border: 1px solid var(--border); color: var(--text);
@@ -252,12 +252,12 @@
     {% endfor %}
   </div>
 
-  <div class="tile heat">
-    <h2>Shipping activity</h2>
-    <div class="heatgrid">
-      {% for i in range(130) %}{% set lvl = (i * 37 + (i * i) // 3) % 23 % 5 %}<i data-l="{{ lvl }}" style="opacity: {{ [0.07, 0.16, 0.32, 0.58, 0.9][lvl] }}"></i>{% endfor %}
+  <div class="tile toybox">
+    <h2>The toolbox</h2>
+    <div class="box" id="toybox">
+      {% for s in flat_skills[:14] %}<span class="mag">{{ s }}</span>{% endfor %}
     </div>
-    <small>always building — {{ n_projects }} shipped projects and counting</small>
+    <small>{{ n_skills }} tools, zero gravity — grab one and throw it</small>
   </div>
 
   <div class="tile links">
@@ -353,35 +353,79 @@
     });
   });
 
-  // shipping heatmap: hover tooltip + click-to-launch
-  var heat = document.querySelector('.heatgrid');
-  if (heat) {
-    var tip = document.createElement('div'); tip.id = 'heattip'; document.body.appendChild(tip);
-    var MOODS = ['quiet day', 'warming up', 'in the zone', 'shipping spree', 'on fire 🔥'];
-    var SHIPS = [0, 1, 2, 4, 6];
-    var launched = 0, note = document.querySelector('.heat small'), note0 = note ? note.textContent : '';
-    heat.addEventListener('mouseover', function(e){
-      if (e.target.tagName !== 'I') return;
-      var l = +e.target.dataset.l || 0, rc = e.target.getBoundingClientRect();
-      tip.textContent = (SHIPS[l] ? SHIPS[l] + ' commit' + (SHIPS[l] > 1 ? 's' : '') + ' — ' : '') + MOODS[l];
-      tip.style.left = rc.left + rc.width / 2 + 'px';
-      tip.style.top = rc.top + 'px';
-      tip.classList.add('on');
+  // zero-gravity toolbox: skill magnets you can grab and throw
+  var box = document.getElementById('toybox');
+  if (box && reduced) box.classList.add('static');
+  if (box && !reduced) {
+    var mags = [].slice.call(box.querySelectorAll('.mag'));
+    var bodies = mags.map(function(el, i){
+      return { el: el, x: 0, y: 0, w: 0, h: 0, placed: false,
+               vx: ((i * 31 % 7) - 3) * .3 || .4, vy: ((i * 17 % 5) - 2) * .3 || -.3,
+               rot: (i * 7 % 13) - 6 };
     });
-    heat.addEventListener('mouseout', function(){ tip.classList.remove('on'); });
-    heat.addEventListener('click', function(e){
-      if (e.target.tagName !== 'I') return;
-      var rc = e.target.getBoundingClientRect();
-      e.target.style.opacity = 1;
-      if (!reduced) {
-        var fx = document.createElement('span'); fx.className = 'shipfx'; fx.textContent = '🚀';
-        fx.style.left = rc.left + rc.width / 2 + 'px'; fx.style.top = rc.top + 'px';
-        document.body.appendChild(fx);
-        setTimeout(function(){ fx.remove(); }, 950);
-      }
-      launched++;
-      if (note) note.textContent = note0 + ' · 🚀 × ' + launched;
+    function place(){
+      var W = box.clientWidth, H = box.clientHeight, cols = 4;
+      bodies.forEach(function(b, i){
+        b.w = b.el.offsetWidth; b.h = b.el.offsetHeight;
+        if (!b.placed) {
+          b.x = (i % cols + .5) / cols * (W - b.w - 16) + 8;
+          b.y = (Math.floor(i / cols) + .5) / Math.ceil(bodies.length / cols) * (H - b.h - 16) + 8;
+          b.placed = true;
+        }
+        b.x = Math.min(Math.max(b.x, 0), W - b.w);
+        b.y = Math.min(Math.max(b.y, 0), H - b.h);
+      });
+    }
+    place(); addEventListener('resize', place);
+
+    var held = null, px = 0, py = 0, lvx = 0, lvy = 0;
+    mags.forEach(function(el, i){
+      el.addEventListener('pointerdown', function(e){
+        held = bodies[i]; px = e.clientX; py = e.clientY; lvx = lvy = 0;
+        el.classList.add('held');
+        el.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
     });
+    addEventListener('pointermove', function(e){
+      if (!held) return;
+      lvx = e.clientX - px; lvy = e.clientY - py;
+      held.x += lvx; held.y += lvy;
+      px = e.clientX; py = e.clientY;
+    }, { passive: true });
+    addEventListener('pointerup', function(){
+      if (!held) return;
+      held.vx = Math.max(-14, Math.min(14, lvx)); held.vy = Math.max(-14, Math.min(14, lvy));
+      held.el.classList.remove('held');
+      held = null;
+    });
+
+    (function drift(){
+      var W = box.clientWidth, H = box.clientHeight;
+      bodies.forEach(function(b){
+        if (b !== held) {
+          b.x += b.vx; b.y += b.vy;
+          b.vx *= .992; b.vy *= .992;
+          var s = Math.abs(b.vx) + Math.abs(b.vy);
+          if (s < .5) { b.vx += (b.x + b.y) % 2 ? .012 : -.012; b.vy += (b.x * 3 + b.y) % 2 ? -.01 : .01; }
+          if (b.x <= 0)         { b.x = 0;         b.vx = Math.abs(b.vx) * .82; }
+          if (b.x >= W - b.w)   { b.x = W - b.w;   b.vx = -Math.abs(b.vx) * .82; }
+          if (b.y <= 0)         { b.y = 0;         b.vy = Math.abs(b.vy) * .82; }
+          if (b.y >= H - b.h)   { b.y = H - b.h;   b.vy = -Math.abs(b.vy) * .82; }
+        }
+        // gentle repulsion so magnets don't pile up
+        bodies.forEach(function(o){
+          if (o === b) return;
+          var dx = (b.x + b.w / 2) - (o.x + o.w / 2), dy = (b.y + b.h / 2) - (o.y + o.h / 2);
+          var ox = (b.w + o.w) / 2 - Math.abs(dx), oy = (b.h + o.h) / 2 - Math.abs(dy);
+          if (ox > 0 && oy > 0 && b !== held) {
+            b.vx += (dx > 0 ? 1 : -1) * .06; b.vy += (dy > 0 ? 1 : -1) * .05;
+          }
+        });
+        b.el.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px) rotate(' + b.rot + 'deg)';
+      });
+      requestAnimationFrame(drift);
+    })();
   }
 
   // cursor spotlight
