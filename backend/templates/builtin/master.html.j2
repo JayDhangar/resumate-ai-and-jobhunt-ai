@@ -1,0 +1,302 @@
+{#- Master resume template: renders every builtin style from TemplateMeta.
+    Table-based two-column layout keeps it compatible with xhtml2pdf. -#}
+{%- set gap = {'compact': '6px', 'normal': '10px', 'relaxed': '16px'}.get(layout.spacing, '10px') -%}
+{%- set item_gap = {'compact': '4px', 'normal': '7px', 'relaxed': '10px'}.get(layout.spacing, '7px') -%}
+{%- set sidebar_bg = colors.sidebar_bg or colors.primary -%}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>{{ resume.name or 'Resume' }}</title>
+<style>
+  @page { size: A4; margin: 1.4cm 1.5cm; }
+  body {
+    font-family: {{ fonts.body }};
+    font-size: {{ fonts.base_size_pt }}pt;
+    color: {{ colors.text }};
+    background: {{ colors.background }};
+    margin: 0; padding: 0;
+    line-height: 1.35;
+  }
+  .page { max-width: 800px; margin: 0 auto; background: {{ colors.background }}; }
+  h1.name {
+    font-family: {{ fonts.heading }};
+    font-size: {{ fonts.name_size_pt }}pt;
+    color: {{ colors.primary }};
+    margin: 0 0 2px 0; letter-spacing: 0.5px;
+  }
+  .headline { font-size: {{ fonts.base_size_pt + 1.5 }}pt; color: {{ colors.accent }}; margin: 0 0 4px 0; }
+  .contact { font-size: {{ fonts.base_size_pt - 1 }}pt; color: {{ colors.text }}; margin: 2px 0; }
+  .contact a { color: {{ colors.accent }}; text-decoration: none; }
+  .header-centered { text-align: center; margin-bottom: {{ gap }}; }
+  .header-left { text-align: left; margin-bottom: {{ gap }}; }
+  .header-banner {
+    background: {{ colors.primary }}; color: #ffffff;
+    padding: 16px 20px; margin-bottom: {{ gap }};
+  }
+  .header-banner h1.name, .header-banner .headline, .header-banner .contact,
+  .header-banner .contact a { color: #ffffff; }
+  table.split-head { width: 100%; border-collapse: collapse; margin-bottom: {{ gap }}; }
+  table.split-head td { vertical-align: bottom; padding-bottom: 6px; border-bottom: 2.5px solid {{ colors.accent }}; }
+  td.split-right { text-align: right; }
+  .monogram {
+    display: inline-block; width: 34px; height: 34px; margin-right: 9px;
+    background: {{ colors.accent }}; color: #ffffff;
+    border-radius: 50%; text-align: center; vertical-align: middle;
+    font-family: {{ fonts.heading }}; font-size: {{ fonts.name_size_pt * 0.55 }}pt;
+    font-weight: bold; line-height: 34px;
+  }
+  .item-timeline {
+    border-left: 2.5px solid {{ colors.accent }};
+    padding-left: 13px; margin-left: 3px; margin-bottom: {{ item_gap }};
+  }
+  h2.section {
+    font-family: {{ fonts.heading }};
+    font-size: {{ fonts.section_size_pt }}pt;
+    color: {{ colors.accent }};
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin: {{ gap }} 0 4px 0;
+    {% if layout.section_divider == 'line' %}border-bottom: 1.5px solid {{ colors.accent }}; padding-bottom: 2px;{% endif %}
+    {% if layout.section_divider == 'block' %}background: {{ colors.accent }}; color: #ffffff; padding: 3px 8px;{% endif %}
+    {% if layout.section_divider == 'dots' %}border-bottom: 2px dotted {{ colors.accent }}; padding-bottom: 2px;{% endif %}
+  }
+  .item { margin-bottom: {{ item_gap }}; }
+  .item-title { font-weight: bold; font-size: {{ fonts.base_size_pt + 0.5 }}pt; }
+  .item-sub { color: {{ colors.accent }}; font-size: {{ fonts.base_size_pt }}pt; }
+  .item-dates { float: right; font-size: {{ fonts.base_size_pt - 1 }}pt; color: {{ colors.text }}; opacity: 0.85; }
+  ul.bullets { margin: 3px 0 0 16px; padding: 0; }
+  ul.bullets li { margin-bottom: 2px; }
+  .skill-line { margin-bottom: 3px; }
+  .skill-cat { font-weight: bold; }
+  .skill-chip {
+    display: inline-block; padding: 1.5px 8px; margin: 2px 4px 2px 0;
+    border: 1px solid {{ colors.accent }}; border-radius: 9px;
+    color: {{ colors.accent }}; font-size: {{ fonts.base_size_pt - 1 }}pt;
+  }
+  table.layout { width: 100%; border-collapse: collapse; }
+  td.sidebar {
+    width: 30%; background: {{ sidebar_bg }}; color: {{ colors.sidebar_text }};
+    padding: 16px 14px; vertical-align: top;
+  }
+  td.sidebar h2.section { color: {{ colors.sidebar_text }}; border-color: {{ colors.sidebar_text }}; }
+  td.sidebar .contact, td.sidebar .contact a, td.sidebar .skill-line { color: {{ colors.sidebar_text }}; }
+  td.main { padding: 16px 0 16px 20px; vertical-align: top; }
+  .clear { clear: both; }
+</style>
+</head>
+<body>
+<div class="page">
+
+{%- macro contact_block(vertical=False) -%}
+  <div class="contact">
+    {%- set sep = '<br/>' if vertical else ' &nbsp;•&nbsp; ' -%}
+    {%- set bits = [] -%}
+    {%- if resume.email %}{% set _ = bits.append(resume.email) %}{% endif -%}
+    {%- if resume.phone %}{% set _ = bits.append(resume.phone) %}{% endif -%}
+    {%- if resume.location %}{% set _ = bits.append(resume.location) %}{% endif -%}
+    {%- if resume.links.linkedin %}{% set _ = bits.append(resume.links.linkedin) %}{% endif -%}
+    {%- if resume.links.github %}{% set _ = bits.append(resume.links.github) %}{% endif -%}
+    {%- if resume.links.website %}{% set _ = bits.append(resume.links.website) %}{% endif -%}
+    {{ bits|join(sep)|safe if not vertical else bits|join('<br/>')|safe }}
+  </div>
+{%- endmacro -%}
+
+{%- macro name_with_monogram() -%}
+  {% if layout.monogram %}<span class="monogram">{{ (resume.name or 'R')[0]|upper }}</span>{% endif -%}
+  {{ resume.name or 'Your Name' }}
+{%- endmacro -%}
+
+{%- macro header() -%}
+  {% if layout.header_style == 'split' %}
+    <table class="split-head">
+      <tr>
+        <td>
+          <h1 class="name">{{ name_with_monogram() }}</h1>
+          {% if resume.headline %}<div class="headline">{{ resume.headline }}</div>{% endif %}
+        </td>
+        <td class="split-right">{{ contact_block(vertical=True) }}</td>
+      </tr>
+    </table>
+  {% else %}
+    <div class="header-{{ layout.header_style if layout.header_style in ('centered','left','banner') else 'left' }}">
+      <h1 class="name">{{ name_with_monogram() }}</h1>
+      {% if resume.headline %}<div class="headline">{{ resume.headline }}</div>{% endif %}
+      {{ contact_block() }}
+    </div>
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_summary() -%}
+  {% if resume.summary %}
+    <h2 class="section">{{ titles.get('summary', 'Summary') }}</h2>
+    <div class="item">{{ resume.summary }}</div>
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_skills() -%}
+  {% if resume.skills %}
+    <h2 class="section">{{ titles.get('skills', 'Skills') }}</h2>
+    {% for group in resume.skills %}
+      {% if layout.skill_style == 'chips' %}
+        <div class="skill-line">
+          {% if group.category %}<span class="skill-cat">{{ group.category }}</span><br/>{% endif -%}
+          {% for s in group.skills %}<span class="skill-chip">{{ s }}</span>&#32;{% endfor %}
+        </div>
+      {% else %}
+        <div class="skill-line">
+          {% if group.category %}<span class="skill-cat">{{ group.category }}:</span> {% endif -%}
+          {{ group.skills|join(', ') }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_experience() -%}
+  {% if resume.experience %}
+    <h2 class="section">{{ titles.get('experience', 'Experience') }}</h2>
+    {% for exp in resume.experience %}
+      <div class="{{ 'item-timeline' if layout.experience_style == 'timeline' else 'item' }}">
+        {% if exp.start_date or exp.end_date %}
+          <span class="item-dates">{{ exp.start_date }}{% if exp.end_date %} – {{ exp.end_date }}{% endif %}</span>
+        {% endif %}
+        <div class="item-title">{{ exp.title }}</div>
+        <div class="item-sub">{{ exp.company }}{% if exp.location %} · {{ exp.location }}{% endif %}</div>
+        {% if exp.bullets %}
+          <ul class="bullets">{% for b in exp.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+        {% endif %}
+        <div class="clear"></div>
+      </div>
+    {% endfor %}
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_projects() -%}
+  {% if resume.projects %}
+    <h2 class="section">{{ titles.get('projects', 'Projects') }}</h2>
+    {% for proj in resume.projects %}
+      <div class="item">
+        <div class="item-title">{{ proj.name }}{% if proj.link %} — <a href="{{ proj.link }}">{{ proj.link }}</a>{% endif %}</div>
+        {% if proj.description %}<div>{{ proj.description }}</div>{% endif %}
+        {% if proj.technologies %}<div class="item-sub">{{ proj.technologies|join(', ') }}</div>{% endif %}
+        {% if proj.bullets %}
+          <ul class="bullets">{% for b in proj.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_education() -%}
+  {% if resume.education %}
+    <h2 class="section">{{ titles.get('education', 'Education') }}</h2>
+    {% for edu in resume.education %}
+      <div class="item">
+        {% if edu.start_date or edu.end_date %}
+          <span class="item-dates">{{ edu.start_date }}{% if edu.end_date %} – {{ edu.end_date }}{% endif %}</span>
+        {% endif %}
+        <div class="item-title">{{ edu.degree }}</div>
+        <div class="item-sub">{{ edu.institution }}{% if edu.location %} · {{ edu.location }}{% endif %}{% if edu.gpa %} · GPA {{ edu.gpa }}{% endif %}</div>
+        {% if edu.details %}
+          <ul class="bullets">{% for d in edu.details %}<li>{{ d }}</li>{% endfor %}</ul>
+        {% endif %}
+        <div class="clear"></div>
+      </div>
+    {% endfor %}
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_certifications() -%}
+  {% if resume.certifications %}
+    <h2 class="section">{{ titles.get('certifications', 'Certifications') }}</h2>
+    {% for cert in resume.certifications %}
+      <div class="item">
+        <span class="item-title">{{ cert.name }}</span>
+        {% if cert.issuer %} — {{ cert.issuer }}{% endif %}
+        {% if cert.date %} ({{ cert.date }}){% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_languages() -%}
+  {% if resume.languages %}
+    <h2 class="section">{{ titles.get('languages', 'Languages') }}</h2>
+    <div class="item">
+      {%- set langs = [] -%}
+      {%- for l in resume.languages -%}
+        {%- set _ = langs.append(l.name + (' (' + l.proficiency + ')' if l.proficiency else '')) -%}
+      {%- endfor -%}
+      {{ langs|join(', ') }}
+    </div>
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro section_awards() -%}
+  {% if resume.awards %}
+    <h2 class="section">{{ titles.get('awards', 'Awards') }}</h2>
+    {% for award in resume.awards %}
+      <div class="item">
+        <span class="item-title">{{ award.title }}</span>
+        {% if award.issuer %} — {{ award.issuer }}{% endif %}
+        {% if award.date %} ({{ award.date }}){% endif %}
+        {% if award.description %}<div>{{ award.description }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+{%- endmacro -%}
+
+{%- macro extra_sections() -%}
+  {% for key, lines in resume.extra_sections.items() %}
+    {% if lines %}
+      <h2 class="section">{{ titles.get(key, key|title) }}</h2>
+      <ul class="bullets">{% for line in lines %}<li>{{ line }}</li>{% endfor %}</ul>
+    {% endif %}
+  {% endfor %}
+{%- endmacro -%}
+
+{%- set renderers = {
+  'summary': section_summary, 'skills': section_skills, 'experience': section_experience,
+  'projects': section_projects, 'education': section_education,
+  'certifications': section_certifications, 'languages': section_languages, 'awards': section_awards
+} -%}
+
+{%- if layout.sidebar in ('left', 'right') -%}
+  {%- set side_keys = ['skills', 'certifications', 'languages', 'awards'] -%}
+  {%- set main_keys = section_order | reject('in', side_keys) | list -%}
+  <table class="layout">
+    <tr>
+    {%- if layout.sidebar == 'left' -%}
+      <td class="sidebar">
+        {{ contact_block(vertical=True) }}
+        {% for key in side_keys %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
+      </td>
+      <td class="main">
+        <h1 class="name">{{ resume.name or 'Your Name' }}</h1>
+        {% if resume.headline %}<div class="headline">{{ resume.headline }}</div>{% endif %}
+        {% for key in main_keys %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
+        {{ extra_sections() }}
+      </td>
+    {%- else -%}
+      <td class="main">
+        <h1 class="name">{{ resume.name or 'Your Name' }}</h1>
+        {% if resume.headline %}<div class="headline">{{ resume.headline }}</div>{% endif %}
+        {% for key in main_keys %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
+        {{ extra_sections() }}
+      </td>
+      <td class="sidebar">
+        {{ contact_block(vertical=True) }}
+        {% for key in side_keys %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
+      </td>
+    {%- endif -%}
+    </tr>
+  </table>
+{%- else -%}
+  {{ header() }}
+  {% for key in section_order %}{% if key in renderers %}{{ renderers[key]() }}{% endif %}{% endfor %}
+  {{ extra_sections() }}
+{%- endif -%}
+
+</div>
+</body>
+</html>

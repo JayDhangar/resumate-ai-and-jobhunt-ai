@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    volumes:
+      - ./database:/database
+      - generated:/app/generated
+      - templates:/app/templates
+    environment:
+      - SQLITE_PATH=/database/resume_builder.db
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  generated:
+  templates:

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+node_modules/
+dist/
+backend/generated/
+backend/templates/downloaded/
+backend/templates/uploaded/
+database/*.db
+.pytest_cache/
+.claude/
