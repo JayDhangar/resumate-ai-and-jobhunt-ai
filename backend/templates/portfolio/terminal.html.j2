@@ -70,6 +70,22 @@
   #tout { max-height: 180px; overflow-y: auto; font-size: 13px; color: #cfe8cf; }
   #tout div { margin: 2px 0; }
   .hint { color: rgba({{ accent_rgb }}, .5); font-size: 12px; }
+  /* system bugs: skills disguised as crawlers. click one to squash it */
+  .bug { position: fixed; z-index: 30; width: 26px; height: 19px; cursor: crosshair;
+         will-change: transform; filter: drop-shadow(0 0 5px var(--dim)); }
+  .bug svg { width: 100%; height: 100%; display: block; }
+  .pxx { position: fixed; z-index: 31; width: 4px; height: 4px; background: var(--acc);
+         pointer-events: none; transition: transform .7s ease-out, opacity .7s; }
+  .bugname { position: fixed; z-index: 32; color: var(--acc); font-weight: 700; white-space: nowrap;
+             text-shadow: 0 0 12px var(--dim); pointer-events: none;
+             animation: bugname 1.5s ease-out forwards; }
+  @keyframes bugname { 0% { opacity: 0; transform: translate(-50%, 8px) scale(.6); }
+                       18% { opacity: 1; transform: translate(-50%, -6px) scale(1.05); }
+                       100% { opacity: 0; transform: translate(-50%, -40px) scale(1.1); } }
+  .bugtoast { position: fixed; right: 16px; bottom: 92px; z-index: 46; font-size: 13px; color: #cfe8cf;
+              background: rgba(5,9,6,.95); border: 1px solid rgba({{ accent_rgb }}, .45);
+              padding: 8px 14px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .bugtoast.on { opacity: 1; }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
     section { opacity: 1; transform: none; }
@@ -156,7 +172,7 @@
   <div id="tout"></div>
   <span class="prompt"><b>guest</b>@{{ slug }}:~$</span>
   <input id="tin" autocomplete="off" spellcheck="false" placeholder="type 'help' and press Enter…"/>
-  <div class="hint">try: help · skills · contact · sudo hire-me</div>
+  <div class="hint">try: help · skills · contact · sudo hire-me · (and squash the bugs crawling on screen)</div>
 </div>
 
 <script>
@@ -270,6 +286,72 @@
     tout.appendChild(ans);
     tout.scrollTop = tout.scrollHeight;
   });
+
+  /* system bugs: your skills crawl the screen as pixel invaders. squash to recover. */
+  var BUGSK = {{ flat_skills[:8] | tojson }};
+  if (!reduced && BUGSK.length) {
+    var MAP = ['00100000100','00010001000','00111111100','01101110110',
+               '11111111111','10111111101','10100000101','00011011000'];
+    var RECTS = '';
+    MAP.forEach(function(row, y){ for (var x = 0; x < row.length; x++)
+      if (row[x] === '1') RECTS += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>'; });
+    var SPRITE = '<svg viewBox="0 0 11 8" fill="rgb({{ accent_rgb }})" xmlns="http://www.w3.org/2000/svg">' + RECTS + '</svg>';
+    var toast = document.createElement('div'); toast.className = 'bugtoast';
+    document.body.appendChild(toast);
+    var squashed = 0, toastT;
+    function note(msg){
+      toast.textContent = msg; toast.classList.add('on');
+      clearTimeout(toastT); toastT = setTimeout(function(){ toast.classList.remove('on'); }, 2600);
+    }
+    var crawlers = BUGSK.map(function(skill){
+      var el = document.createElement('div'); el.className = 'bug'; el.innerHTML = SPRITE;
+      document.body.appendChild(el);
+      var b = { el: el, skill: skill, dead: false,
+                x: 20 + Math.random() * (innerWidth - 60),
+                y: 70 + Math.random() * Math.max(60, innerHeight - 320),
+                a: Math.random() * 6.28, t: Math.random() * 100 };
+      el.addEventListener('click', function(){
+        if (b.dead) return; b.dead = true; squashed++;
+        var rc = el.getBoundingClientRect(), cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2;
+        el.remove();
+        for (var k = 0; k < 14; k++) (function(){
+          var px = document.createElement('i'); px.className = 'pxx';
+          px.style.left = cx + 'px'; px.style.top = cy + 'px';
+          document.body.appendChild(px);
+          var ang = Math.random() * 6.28, d = 26 + Math.random() * 46;
+          requestAnimationFrame(function(){ requestAnimationFrame(function(){
+            px.style.transform = 'translate(' + Math.cos(ang) * d + 'px,' + Math.sin(ang) * d + 'px) scale(0)';
+            px.style.opacity = 0;
+          }); });
+          setTimeout(function(){ px.remove(); }, 800);
+        })();
+        var nm = document.createElement('div'); nm.className = 'bugname glow';
+        nm.textContent = b.skill; nm.style.left = cx + 'px'; nm.style.top = cy + 'px';
+        document.body.appendChild(nm); setTimeout(function(){ nm.remove(); }, 1600);
+        note(squashed === BUGSK.length
+          ? 'all ' + BUGSK.length + ' bugs squashed ✔ system clean. skills recovered.'
+          : 'bug squashed: ' + b.skill + ' · ' + squashed + '/' + BUGSK.length);
+      });
+      return b;
+    });
+    (function crawl(){
+      crawlers.forEach(function(b){
+        if (b.dead) return;
+        b.t++;
+        b.a += (Math.random() - .5) * .18;
+        var sp = .55 + Math.sin(b.t * .12) * .25;  // scuttle: speed pulses like insect steps
+        b.x += Math.cos(b.a) * sp; b.y += Math.sin(b.a) * sp;
+        if (b.x < 6) { b.x = 6; b.a = Math.PI - b.a; }
+        if (b.x > innerWidth - 32) { b.x = innerWidth - 32; b.a = Math.PI - b.a; }
+        if (b.y < 58) { b.y = 58; b.a = -b.a; }
+        if (b.y > innerHeight - 240) { b.y = innerHeight - 240; b.a = -b.a; }
+        b.el.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px)' +
+          ' rotate(' + Math.sin(b.t * .3) * 10 + 'deg)' +
+          (Math.cos(b.a) < 0 ? ' scaleX(-1)' : '');
+      });
+      requestAnimationFrame(crawl);
+    })();
+  }
 })();
 </script>
 </body>

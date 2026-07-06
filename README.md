@@ -47,11 +47,11 @@ color (full color-picker), preview live, download.
 
 | Design | Signature moves |
 |---|---|
-| 🖥 **Neon Terminal** | Boot-typing intro, phosphor glow, CRT scanlines, and a **real prompt** recruiters can type into: `help`, `neofetch` (ASCII card of you), `theme amber`, `matrix`, `sudo hire-me` — with ↑ history and Tab completion |
+| 🖥 **Neon Terminal** | Boot-typing intro, phosphor glow, CRT scanlines, a **real prompt** recruiters can type into (`help`, `neofetch`, `theme amber`, `matrix`, `sudo hire-me`, ↑ history, Tab completion), and 👾 **pixel bugs crawling the screen**: squash one and it explodes into a skill |
 | 🍱 **Bento Studio** | Glass bento grid with 3D-tilt tiles, magnetic buttons, count-up stats, graffiti skill backdrop behind your photo, a **zero-gravity toolbox** (your skills as floating magnets you can grab and throw), cursor spotlight, and 🎁 **click-to-uncover** project tiles |
-| ✒️ **Kinetic Ink** | Editorial serif with letter-by-letter name assembly, rotating role line, custom morphing cursor, a **pinned sideways-scrolling project strip**, and full-detail lightboxes |
+| ✒️ **Kinetic Ink** | Editorial serif with letter-by-letter name assembly, **magnetic headline letters that dodge your cursor**, rotating role line, custom morphing cursor, a **pinned sideways-scrolling project strip**, full-detail lightboxes, and 🩸 click-anywhere **ink splats stamped with your skills** |
 | 🌌 **Aurora Glass** | Drifting aurora blobs, **rotating galaxy with shooting stars**, cursor glow, a draggable 3D **skill constellation** (spider-web of your skills), self-drawing timeline — and 8 secret skill-stars hidden in the sky (find them all 🏆) |
-| 🧱 **Brutalist Grid** | Hard shadows, slamming clip-path reveals, marquee tickers, wobbling stickers, expanding work rows, and an ⚡ Invert button that flips the whole site |
+| 🧱 **Brutalist Grid** | Hard shadows, slamming clip-path reveals, marquee tickers, wobbling stickers, expanding work rows, an ⚡ Invert button that flips the whole site, and 🧱 **loose bricks in the page edges**: pull one out and it's stamped with a skill before sliding back in |
 
 All designs auto-fill from your resume, respect `prefers-reduced-motion`, sanitize
 inputs, and are covered by tests. Files are saved to `backend/generated/portfolios/`.

@@ -94,10 +94,29 @@
             border: 3px solid var(--ink); font-weight: 900; padding: 10px 16px; cursor: pointer;
             font-size: 13px; text-transform: uppercase; box-shadow: 5px 5px 0 var(--ink); }
   .invbtn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+
+  /* loose bricks in the wall: click one and it slides out stamped with a skill */
+  .brick { position: fixed; z-index: 60; width: 118px; height: 38px; background: var(--acc);
+           background-image: repeating-linear-gradient(90deg, transparent 0 19px, rgba(17,17,17,.28) 19px 22px);
+           border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); cursor: pointer;
+           font-weight: 900; font-size: 12px; text-transform: uppercase; color: var(--ink);
+           display: flex; align-items: center; justify-content: center; overflow: hidden;
+           transition: transform .18s cubic-bezier(.9,0,.1,1); user-select: none; }
+  .brick .s { display: none; white-space: nowrap; padding: 0 6px; }
+  .brick.out { background-image: none; }
+  .brick.out .s { display: block; }
+  .brick.l { left: -84px; } .brick.r { right: -84px; }
+  .brick.l:hover:not(.out) { transform: translateX(14px); }
+  .brick.r:hover:not(.out) { transform: translateX(-14px); }
+  .brick.l.out { transform: translateX(92px) rotate(-2deg); }
+  .brick.r.out { transform: translateX(-92px) rotate(2deg); }
+  body.inv .brick { border-color: var(--paper); box-shadow: 5px 5px 0 var(--paper); }
+  @media (max-width: 1180px) { .brick { display: none; } }
   @media (max-width: 700px) { .xp { grid-template-columns: 1fr; } .xp ul { grid-column: 1; } }
   @media (prefers-reduced-motion: reduce) {
     .blk { clip-path: none; transition: none; }
     .marq div, .sticker { animation: none; }
+    .brick { transition: none; }
   }
 </style>
 </head>
@@ -207,6 +226,24 @@
   addEventListener('scroll', sweep, { passive: true });
   sweep();
   setTimeout(function(){ blocks.forEach(reveal); }, 6000);
+
+  // loose bricks: pull one out of the wall to see the skill stamped on it
+  var BR = {{ flat_skills[:10] | tojson }};
+  if (BR.length && matchMedia('(min-width: 1181px)').matches) {
+    BR.forEach(function(skill, i){
+      var b = document.createElement('div');
+      b.className = 'brick ' + (i % 2 ? 'r' : 'l');
+      b.style.top = ((i * 25) % 74 + 10) + '%';
+      var s = document.createElement('span'); s.className = 's'; s.textContent = skill;
+      b.appendChild(s);
+      b.addEventListener('click', function(){
+        if (b.classList.contains('out')) return;
+        b.classList.add('out');
+        setTimeout(function(){ b.classList.remove('out'); }, 1700);
+      });
+      document.body.appendChild(b);
+    });
+  }
 })();
 </script>
 </body>

@@ -100,6 +100,19 @@
   .foot { display: flex; gap: 26px; justify-content: center; margin-top: 30px;
           font: 600 13px 'Segoe UI', sans-serif; letter-spacing: 1px; }
   .foot a { text-decoration: none; opacity: .85; }
+
+  /* magnetic headline letters + ink splats that stamp a skill */
+  .ch { display: inline-block; will-change: transform; }
+  .splat { position: fixed; z-index: 60; pointer-events: none;
+           background: var(--acc); color: #fff; font-style: italic; font-size: 15px;
+           padding: 16px 26px; white-space: nowrap;
+           border-radius: 58% 42% 63% 37% / 46% 62% 38% 54%;
+           transform: translate(-50%,-50%) scale(.2) rotate(-6deg); opacity: 0;
+           animation: splat 1.6s cubic-bezier(.2,.8,.3,1) forwards; }
+  .splat i { position: absolute; background: var(--acc); border-radius: 50%; }
+  @keyframes splat { 12% { transform: translate(-50%,-50%) scale(1.08) rotate(2deg); opacity: 1; }
+                     70% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; }
+                     100% { transform: translate(-50%,-50%) scale(.9) rotate(0deg); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) {
     h1 .w { animation: none; transform: none; }
     .rev > * { transform: none; transition: none; }
@@ -260,6 +273,57 @@ document.addEventListener('keydown', function(e){
     var dist = strip.scrollWidth - innerWidth + innerWidth * 0.08;
     strip.style.transform = 'translateX(' + (-p * dist) + 'px)';
   }, { passive: true });
+
+  // magnetic headline: the big letters dodge the cursor and spring back
+  if (!reduced && matchMedia('(pointer: fine)').matches) setTimeout(function(){
+    var chars = [];
+    document.querySelectorAll('#name .w').forEach(function(w){
+      var text = w.textContent; w.textContent = '';
+      text.split('').forEach(function(c){
+        var s = document.createElement('span'); s.className = 'ch'; s.textContent = c;
+        w.appendChild(s); chars.push({ el: s, dx: 0, dy: 0 });
+      });
+    });
+    var mx = -1e4, my = -1e4;
+    addEventListener('mousemove', function(e){ mx = e.clientX; my = e.clientY; }, { passive: true });
+    (function spring(){
+      chars.forEach(function(c){
+        var rc = c.el.getBoundingClientRect();
+        // rest position: subtract the current offset so the force uses the letter's home spot
+        var cx = rc.left + rc.width / 2 - c.dx, cy = rc.top + rc.height / 2 - c.dy;
+        var dx = cx - mx, dy = cy - my, d2 = dx * dx + dy * dy, R = 130, tx = 0, ty = 0;
+        if (d2 < R * R && d2 > 1) {
+          var d = Math.sqrt(d2), f = (R - d) / R * 36;
+          tx = dx / d * f; ty = dy / d * f;
+        }
+        c.dx += (tx - c.dx) * .16; c.dy += (ty - c.dy) * .16;
+        c.el.style.transform = 'translate(' + c.dx + 'px,' + c.dy + 'px)';
+      });
+      requestAnimationFrame(spring);
+    })();
+  }, 1700);  // start after the intro rise animation settles
+
+  // ink splats: click blank paper and a skill soaks in, then fades
+  var INKS = {{ flat_skills | tojson }};
+  if (INKS.length && !reduced) {
+    var ik = 0;
+    addEventListener('click', function(e){
+      if (e.target.closest('a, button, input, .card, .lb, .xp-row')) return;
+      var sp = document.createElement('div'); sp.className = 'splat';
+      sp.textContent = INKS[ik++ % INKS.length];
+      sp.style.left = e.clientX + 'px'; sp.style.top = e.clientY + 'px';
+      for (var i = 0; i < 5; i++) {
+        var dr = document.createElement('i');
+        var sz = 4 + Math.random() * 9;
+        dr.style.width = dr.style.height = sz + 'px';
+        dr.style.left = (50 + (Math.random() - .5) * 170) + '%';
+        dr.style.top = (50 + (Math.random() - .5) * 180) + '%';
+        sp.appendChild(dr);
+      }
+      document.body.appendChild(sp);
+      setTimeout(function(){ sp.remove(); }, 1700);
+    });
+  }
 })();
 </script>
 </body>
